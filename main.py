@@ -677,24 +677,28 @@ async def handle_topic(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     return Q_COUNT
 
 async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    if not is_authorized(update): return Q_COUNT
+    """✅ Group + Private दोनों में काम करेगा"""
+    
+    if not is_authorized(update): 
+        return Q_COUNT
     
     user_text = ""
     query = update.callback_query
     
-    # 1. Check if input came from the Question Count Inline Button
+    # 🟢 Case 1: Button से आया है (Group या Private)
     if query:
         await query.answer()
         user_text = query.data.replace("qcnt_", "").strip()
-        try: await query.edit_message_reply_markup(reply_markup=None)
-        except Exception: pass
+        msg_target = query.message
+    # 🟢 Case 2: Text से आया है (Private chat में)
     elif update.message and update.message.text:
         user_text = update.message.text.strip()
-        
+        msg_target = update.message
+    
     allowed_counts = ['10', '20', '50', '70']
     
     if user_text not in allowed_counts:
-        # Fallback if invalid input
+        # 🎨 Inline buttons फिर से दिखाएँ
         count_inline_keyboard = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton("10", callback_data="qcnt_10"),
@@ -703,18 +707,18 @@ async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 InlineKeyboardButton("70", callback_data="qcnt_70")
             ]
         ])
-        msg_target = query.message if query else update.message
+        
         await msg_target.reply_text(
-            "⚠️ <b>अवैध इनपुट!</b> कृपया नीचे दिए गए इनलाइन बटनों में से ही किसी एक संख्या को चुनें:",
-            parse_mode="HTML",
-            reply_markup=count_inline_keyboard
+            "⚠️ <b>अवैध इनपुट!</b> कृपया नीचे दिए गए buttons में से चुनें:",
+            reply_markup=count_inline_keyboard,
+            parse_mode="HTML"
         )
         return Q_COUNT
         
     context.user_data['q_count'] = int(user_text)
     saved_topic = context.user_data.get('topic', 'AI Quiz')
     
-    # 🔥 2. Title Step Confirmation Inline Buttons (Yes / No)
+    # 🔥 Title confirmation buttons
     title_confirm_keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("Yes ✅", callback_data="title_use_topic"),
@@ -722,13 +726,12 @@ async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         ]
     ])
     
-    msg_obj = query.message if query else update.message
-    await msg_obj.reply_text(
+    await msg_target.reply_text(
         f"<blockquote>✅ Questions Count: <b>{context.user_data['q_count']}</b></blockquote>\n\n"
-        f"🌟 <b>क्या आप क्विज़ का टाइटल भी वही रखना चाहते हैं जो टॉपिक का नाम है?</b>\n"
+        f"🌟 <b>क्या आप क्विज़ का टाइटल भी वही रखना चाहते हैं?</b>\n"
         f"📝 <i>टॉपिक नाम: {saved_topic}</i>",
-        parse_mode="HTML",
-        reply_markup=title_confirm_keyboard
+        reply_markup=title_confirm_keyboard,
+        parse_mode="HTML"
     )
     return TITLE
 
