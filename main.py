@@ -653,7 +653,8 @@ async def handle_final_topic_selection(update: Update, context: ContextTypes.DEF
     
     await query.message.reply_text(
         f"<blockquote>✅ Topic Saved: <b>{context.user_data['topic']}</b></blockquote>\n\n"
-        "<blockquote>🔢 <b>Step 2:</b> How many questions do you want?</blockquote>",
+        "<blockquote>🔢 <b>Step 2:</b> How many questions do you want?</blockquote>\n"
+        "<b>Type - | 10 | 20 | 50 | 70 |</b>",
         parse_mode="HTML",
         reply_markup=markup
     )
@@ -725,7 +726,7 @@ async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     msg_obj = query.message if query else update.message
     await msg_obj.reply_text(
         f"<blockquote>✅ Questions Count: <b>{context.user_data['q_count']}</b></blockquote>\n\n"
-        f"🌟 <b>क्या आप क्विज़ का टाइटल भी वही रखना चाहते हैं जो टॉपिक का नाम है?</b>\n"
+        f"🌟 <b>क्या आप क्विज़ का टाइटल वही रखना चाहते हैं जो टॉपिक का नाम है?</b>\n"
         f"📝 <i>टॉपिक नाम: {saved_topic}</i>",
         parse_mode="HTML",
         reply_markup=title_confirm_keyboard
@@ -813,7 +814,7 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
     
     # ✅ Selective Keyboard 4: Language Choice
     reply_keyboard = [['English', 'Hindi']]
-    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=False)
+    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
     
     await update.message.reply_text(
         "<blockquote>🌐 <b>Step 5 — Language</b>\nChoose quiz output layout language:</blockquote>",
