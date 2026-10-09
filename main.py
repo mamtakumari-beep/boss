@@ -5416,10 +5416,11 @@ async def main():
             entry_points=[CommandHandler("autoquiz", autoquiz_start)],
             states={
                 TOPIC: [
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_topic),
-                    CallbackQueryHandler(handle_subject_navigation, pattern="^sub_"),
-                    CallbackQueryHandler(handle_final_topic_selection, pattern="^set_topic_"),
-                    CallbackQueryHandler(autoquiz_start, pattern="^back_to_subjects_nav$")
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_topic), # टेक्स्ट मैसेज आने पर सीधा handle_topic पर भेजेगा
+                    CallbackQueryHandler(handle_topic_mode_routing, pattern="^mode_"), # Text/Subject मोड सिलेक्ट करने के लिए
+                    CallbackQueryHandler(handle_subject_navigation, pattern="^sub_"), # मेन सब्जेक्ट कीबोर्ड खोलने के लिए
+                    CallbackQueryHandler(handle_final_topic_selection, pattern="^set_topic_"), # आखिरी टॉपिक चुनने के लिए
+                    CallbackQueryHandler(handle_topic_mode_routing, pattern="^back_to_subjects_nav$") # बैक बटन के लिए नए फ़ंक्शन को कॉल
                  ],
                 Q_COUNT: [
                     CallbackQueryHandler(handle_q_count, pattern="^qcnt_"),
