@@ -659,7 +659,7 @@ async def handle_topic(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     
     # ✅ Selective Keyboard 2: Question Count
     reply_keyboard = [['10', '20', '50', '70']]
-    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
+    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=False)
     
     await update.message.reply_text(
         f"<blockquote>✅ Topic Saved: <b>{context.user_data['topic']}</b></blockquote>\n\n"
