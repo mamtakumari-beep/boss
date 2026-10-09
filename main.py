@@ -739,7 +739,8 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                 [InlineKeyboardButton("Skip Description ⏭️", callback_data="desc_skip")]
             ])
             
-            await query.edit_message_text(
+            # मैसेज सेंड करके उसकी ID मेमोरी में सेव कर रहे हैं
+            sent_msg = await query.edit_message_text(
                 text=(
                     f"✅ Title Saved (Same as Topic): <b>{context.user_data['title']}</b>\n\n"
                     "<blockquote>📝 <b>Step 4:</b> Send a Description for this quiz in chat.</blockquote>\n"
@@ -748,6 +749,8 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                 parse_mode="HTML",
                 reply_markup=desc_inline_keyboard
             )
+            # 📌 यहाँ पुरानी मैसेज आईडी को स्टोर कर लिया
+            context.user_data["last_desc_panel_id"] = sent_msg.message_id
             return DESCRIPTION
             
         elif query.data == "title_custom_name":
@@ -772,13 +775,15 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             [InlineKeyboardButton("Skip Description ⏭️", callback_data="desc_skip")]
         ])
         
-        await update.message.reply_text(
+        sent_msg = await update.message.reply_text(
             f"✅ Title Saved: <b>{context.user_data['title']}</b>\n\n"
             "<blockquote>📝 <b>Step 4:</b> Send a Description for this quiz in chat.</blockquote>\n"
             "<blockquote>or niche diye gaye <b>Skip Description</b> button par click kare.</blockquote>",
             parse_mode="HTML",
             reply_markup=desc_inline_keyboard
         )
+        # 📌 यहाँ भी पुरानी मैसेज आईडी को स्टोर कर लिया
+        context.user_data["last_desc_panel_id"] = sent_msg.message_id
         return DESCRIPTION
 
     return TITLE
@@ -793,25 +798,32 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await query.answer()
         context.user_data['description'] = "None"
         
-    # 🟢 Case 2: अगर यूज़र ने चैट में डिस्क्रिप्शन टेक्स्ट टाइप करके भेजा है या /skip कमांड दी है
+    # 🟢 Case 2: अगर यूज़र ने चैट में डिस्क्रिप्शन टेक्स्ट टाइप करके भेजा है
     else:
         text = update.message.text.strip()
         context.user_data['description'] = "None" if text in ["/skipped", "Skip ⏭️", "/skip"] else text
         
-        # 🔥 FIXED (OLD PANEL CLEANUP LOGIC):
-        # जब टेक्स्ट मैसेज आएगा, तो हम पिछले जनरेट हुए इनलाइन कीबोर्ड पैनल के बटन्स को साफ़ करेंगे।
-        # इसके लिए टेलीग्राम अपडेट के 'reply_to_message' ऑब्जेक्ट का उपयोग करता है।
-        if update.message.reply_to_message:
+        # 🔥 FIXED (FORCE CLOSE BUTTON LOGIC):
+        # मेमोरी से स्टोर की गई मैसेज आईडी को निकालकर उस पूरे पुराने बटन वाले पैनल को डिलीट कर रहे हैं
+        old_panel_id = context.user_data.pop("last_desc_panel_id", None)
+        if old_panel_id:
             try:
-                await context.bot.edit_message_reply_markup(
+                await context.bot.delete_message(
                     chat_id=update.effective_chat.id,
-                    message_id=update.message.reply_to_message.message_id,
-                    reply_markup=None
+                    message_id=old_panel_id
                 )
             except Exception:
-                pass # अगर पैनल पुराना हो गया है या डिलीट नहीं हो सकता, तो क्रैश न हो
+                # सेफ्टी फॉलबैक: अगर डिलीट करने की परमिशन न हो, तो कम से कम बटन्स को क्लोज (रिमूव) कर दे
+                try:
+                    await context.bot.edit_message_reply_markup(
+                        chat_id=update.effective_chat.id,
+                        message_id=old_panel_id,
+                        reply_markup=None
+                    )
+                except Exception:
+                    pass
 
-    # लैंग्वेज के लिए इनलाइन बटन्स
+    # अगले स्टेप (Language) के लिए इनलाइन कीबोर्ड
     lang_inline_keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("English 🇬🇧", callback_data="lang_English"),
@@ -819,8 +831,7 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
         ]
     ])
     
-    # 🟢 रिस्पॉन्स सेंडिंग लॉजिक:
-    # बटन क्लिक होने पर उसी मैसेज को एडिट करेगा, टेक्स्ट मैसेज आने पर फ्रेश मैसेज भेजेगा
+    # यदि बटन दबाया था तो उसी मेसेज को एडिट करेगा, यदि टेक्स्ट भेजा था तो नया फ्रेश मेसेज भेजेगा
     if query:
         await query.edit_message_text(
             text="<blockquote>🌐 <b>Step 5 — Language</b>\nChoose quiz output layout language:</blockquote>",
