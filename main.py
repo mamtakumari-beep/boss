@@ -244,8 +244,8 @@ def check_active_quiz_creation(user_id, context):
     return "quiz_build" in context.user_data and context.user_data["quiz_build"].get("title")
     
 # --- CONVERSATION STATES ---
-(TOPIC, Q_COUNT, TITLE, DESCRIPTION, LANGUAGE, 
- EXPLANATION, DIFFICULTY, OPTIONS_COUNT, TIME_LIMIT, NEGATIVE) = range(10)
+(TOPIC, BUTTON_TOPIC, Q_COUNT, TITLE, DESCRIPTION, LANGUAGE, 
+ EXPLANATION, DIFFICULTY, OPTIONS_COUNT, TIME_LIMIT, NEGATIVE) = range(11)
 
 # AI Question Generator helper
 def generate_bulk_questions_ai(topic, count, lang, difficulty, options_cnt):
@@ -455,16 +455,16 @@ async def handle_topic_mode_routing(update: Update, context: ContextTypes.DEFAUL
     await query.answer()
     choice = query.data
 
-    # CASE A: यूज़र ने Text Mode चुना
+    # CASE A: यूज़र ने Text Mode चुना -> यहाँ टेक्स्ट मैसेज चालू रहेगा
     if choice == "mode_text_input":
         await query.edit_message_text(
-            text="✍️ <b>Please type your Quiz Topic in the chat & send it:</b>\n\n<i>Example: Ancient Indian History, General Science Quiz, Current Affairs 2026 etc.</i>",
+            text="✍️ <b>Please type your Quiz Topic in the chat & send it:</b>\n\n<i>Example: Ancient Indian History, General Science Quiz etc.</i>",
             reply_markup=None,
             parse_mode="HTML"
         )
         return TOPIC
 
-    # CASE B: यूज़र ने Subject/Button Mode चुना या बैक बटन दबाया
+    # CASE B: यूज़र ने Subject/Button Mode चुना या बैक बटन दबाया -> यहाँ स्टेट BUTTON_TOPIC हो जाएगी
     elif choice == "mode_button_select" or choice == "back_to_subjects_nav":
         main_subject_keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("📰 Current Affairs & GK 📰", callback_data="sub_current_gk")],
@@ -480,7 +480,7 @@ async def handle_topic_mode_routing(update: Update, context: ContextTypes.DEFAUL
             reply_markup=main_subject_keyboard,
             parse_mode="HTML"
         )
-        return TOPIC
+        return BUTTON_TOPIC  # 🌟 यहाँ स्टेट बदल दी ताकि टेक्स्ट मैसेज ब्लॉक हो जाए
         
     return TOPIC
 
@@ -628,7 +628,7 @@ async def handle_subject_navigation(update: Update, context: ContextTypes.DEFAUL
     )
     
     await query.edit_message_text(text=updated_text, reply_markup=InlineKeyboardMarkup(topics_keyboard), parse_mode="HTML")
-    return TOPIC
+    return BUTTON_TOPIC
 
 async def handle_final_topic_selection(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Triggered when user clicks a specific topic button. Saves it and routes to Q_COUNT"""
