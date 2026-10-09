@@ -1064,16 +1064,29 @@ async def handle_time_limit(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     if not is_authorized(update): 
         return TIME_LIMIT
     
-    user_text = update.message.text.strip()
-    allowed_times = ['10 sec', '15 sec', '30 sec']
+    query = update.callback_query
+    user_text = ""
     
-    # 🚫 VALIDATION: Check if user sent something other than the buttons
+    # 🟢 FIXED: Extract time integer from callback data
+    if query:
+        await query.answer()
+        user_text = query.data.replace("time_", "").strip()
+    elif update.message and update.message.text:
+        user_text = update.message.text.strip().split()[0]
+    
+    allowed_times = ['10', '15', '30']
     if user_text not in allowed_times:
-        reply_keyboard = [['10 sec', '15 sec', '30 sec']]
-        markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
-        await update.message.reply_text(
+        time_inline_keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("10 sec ⏱", callback_data="time_10"),
+                InlineKeyboardButton("15 sec ⏱", callback_data="time_15"),
+                InlineKeyboardButton("30 sec ⏱", callback_data="time_30")
+            ]
+        ])
+        msg_target = query.message if query else update.message
+        await msg_target.reply_text(
             "⚠️ <b>अवैध इनपुट!</b> कृपया नीचे दिए गए बटनों में से ही टाइम लिमिट चुनें:",
-            reply_markup=markup,
+            reply_markup=time_inline_keyboard,
             parse_mode="HTML"
         )
         return TIME_LIMIT
