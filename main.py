@@ -788,15 +788,30 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
     
     query = update.callback_query
     
-    # Case 1: अगर यूज़र ने इनलाइन 'Skip Description' बटन पर क्लिक किया है
+    # 🟢 Case 1: अगर यूज़र ने इनलाइन 'Skip Description' बटन पर क्लिक किया है
     if query:
         await query.answer()
         context.user_data['description'] = "None"
-    # Case 2: अगर यूज़र ने चैट में डिस्क्रिप्शन टाइप करके भेजा है या /skip कमांड दी है
+        
+    # 🟢 Case 2: अगर यूज़र ने चैट में डिस्क्रिप्शन टेक्स्ट टाइप करके भेजा है या /skip कमांड दी है
     else:
         text = update.message.text.strip()
         context.user_data['description'] = "None" if text in ["/skipped", "Skip ⏭️", "/skip"] else text
-    
+        
+        # 🔥 FIXED (OLD PANEL CLEANUP LOGIC):
+        # जब टेक्स्ट मैसेज आएगा, तो हम पिछले जनरेट हुए इनलाइन कीबोर्ड पैनल के बटन्स को साफ़ करेंगे।
+        # इसके लिए टेलीग्राम अपडेट के 'reply_to_message' ऑब्जेक्ट का उपयोग करता है।
+        if update.message.reply_to_message:
+            try:
+                await context.bot.edit_message_reply_markup(
+                    chat_id=update.effective_chat.id,
+                    message_id=update.message.reply_to_message.message_id,
+                    reply_markup=None
+                )
+            except Exception:
+                pass # अगर पैनल पुराना हो गया है या डिलीट नहीं हो सकता, तो क्रैश न हो
+
+    # लैंग्वेज के लिए इनलाइन बटन्स
     lang_inline_keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("English 🇬🇧", callback_data="lang_English"),
@@ -804,7 +819,8 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
         ]
     ])
     
-    # UI रिस्पॉन्स हैंडलर (बटन क्लिक के लिए एडिट करेगा, टेक्स्ट के लिए न्यू मैसेज भेजेगा)
+    # 🟢 रिस्पॉन्स सेंडिंग लॉजिक:
+    # बटन क्लिक होने पर उसी मैसेज को एडिट करेगा, टेक्स्ट मैसेज आने पर फ्रेश मैसेज भेजेगा
     if query:
         await query.edit_message_text(
             text="<blockquote>🌐 <b>Step 5 — Language</b>\nChoose quiz output layout language:</blockquote>",
@@ -817,6 +833,7 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
             reply_markup=lang_inline_keyboard,
             parse_mode="HTML"
         )
+        
     return LANGUAGE
 
 async def handle_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
