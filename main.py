@@ -444,7 +444,6 @@ async def autoquiz_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     return TOPIC
 
 async def handle_topic_mode_routing(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handles routing based on user choosing Text Mode or Subject/Button Mode"""
     query = update.callback_query
     if not query:
         return TOPIC
@@ -452,7 +451,6 @@ async def handle_topic_mode_routing(update: Update, context: ContextTypes.DEFAUL
     await query.answer()
     choice = query.data
 
-    # CASE A: यूज़र ने Text Mode चुना -> यहाँ टेक्स्ट मैसेज चालू रहेगा
     if choice == "mode_text_input":
         await query.edit_message_text(
             text="✍️ <b>Please type your Quiz Topic in the chat & send it:</b>\n\n<i>Example: Ancient Indian History, General Science Quiz etc.</i>",
@@ -461,15 +459,15 @@ async def handle_topic_mode_routing(update: Update, context: ContextTypes.DEFAUL
         )
         return TOPIC
 
-    # CASE B: यूज़र ने Subject/Button Mode चुना या बैक बटन दबाया -> यहाँ स्टेट BUTTON_TOPIC हो जाएगी
     elif choice == "mode_button_select" or choice == "back_to_subjects_nav":
+        # 🌟 Injecting color to Subject Selection Buttons
         main_subject_keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("📰 Current Affairs & GK 📰", callback_data="sub_current_gk")],
-            [InlineKeyboardButton("📜 History (इतिहास)", callback_data="sub_history"),
-             InlineKeyboardButton("✨ Polity (राजव्यवस्था)", callback_data="sub_polity")],
-            [InlineKeyboardButton("🌍 Geography (भूगोल)", callback_data="sub_geography"),
-             InlineKeyboardButton("🧬 General Science (विज्ञान)", callback_data="sub_science")],
-            [InlineKeyboardButton("🤖 Languages & Grammar", callback_data="sub_languages")]
+            [{"text": "📰 Current Affairs & GK 📰", "callback_data": "sub_current_gk", "style": "primary"}],
+            [{"text": "📜 History (इतिहास)", "callback_data": "sub_history", "style": "primary"},
+             {"text": "✨ Polity (राजव्यवस्था)", "callback_data": "sub_polity", "style": "primary"}],
+            [{"text": "🌍 Geography (भूगोल)", "callback_data": "sub_geography", "style": "primary"},
+             {"text": "🧬 General Science (विज्ञान)", "callback_data": "sub_science", "style": "primary"}],
+            [{"text": "🤖 Languages & Grammar", "callback_data": "sub_languages", "style": "primary"}]
         ])
         
         await query.edit_message_text(
@@ -477,7 +475,7 @@ async def handle_topic_mode_routing(update: Update, context: ContextTypes.DEFAUL
             reply_markup=main_subject_keyboard,
             parse_mode="HTML"
         )
-        return BUTTON_TOPIC  # 🌟 यहाँ स्टेट बदल दी ताकि टेक्स्ट मैसेज ब्लॉक हो जाए
+        return BUTTON_TOPIC
         
     return TOPIC
 
@@ -716,30 +714,23 @@ async def handle_topic(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 
 async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if not is_authorized(update): return Q_COUNT
-    
     query = update.callback_query
-    
-    # 🟢 अगर इनपुट बटन से नहीं आया है (यानी किसी ने टेक्स्ट लिखा है), तो उसे पूरी तरह इग्नोर करें
     if not query:
         return Q_COUNT  
         
     await query.answer()
-    
-    # बटन से वैल्यू निकालें
     user_text = query.data.replace("qcnt_", "").strip()
     context.user_data['q_count'] = int(user_text)
-    
     saved_topic = context.user_data.get('topic', 'AI Quiz')
     
-    # अगले स्टेप (TITLE) के लिए इनलाइन बटन तैयार करें
+    # 🌟 Yes button gets Green (success), No button gets Blue (primary) for layout balance
     title_confirm_keyboard = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("Yes ✅", callback_data="title_use_topic"),
-            InlineKeyboardButton("No ❌", callback_data="title_custom_name")
+            {"text": "Yes ✅", "callback_data": "title_use_topic", "style": "success"},
+            {"text": "No ❌", "callback_data": "title_custom_name", "style": "primary"}
         ]
     ])
     
-    # पुराना कीबोर्ड साफ़ करके नया मैसेज दिखाएं
     await query.edit_message_text(
         text=(
             f"<blockquote>✅ Questions Count: <b>{context.user_data['q_count']}</b></blockquote>\n\n"
@@ -881,10 +872,7 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def handle_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if not is_authorized(update): return LANGUAGE
-    
     query = update.callback_query
-    
-    # 🟢 सिर्फ इनलाइन बटन्स स्वीकार करें, टेक्स्ट मैसेज पूरी तरह ब्लॉक
     if not query:
         return LANGUAGE
         
@@ -892,10 +880,11 @@ async def handle_language(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     user_text = query.data.replace("lang_", "").strip()
     context.user_data['language'] = user_text
     
+    # 🌟 Language specific features custom colors
     expl_inline_keyboard = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("With Explanation ✨", callback_data="expl_With Explanation"),
-            InlineKeyboardButton("No Explanation ❌", callback_data="expl_No Explanation")
+            {"text": "With Explanation", "callback_data": "expl_With Explanation", "style": "primary"},
+            {"text": "No Explanation", "callback_data": "expl_No Explanation", "style": "success"}
         ]
     ])
     
