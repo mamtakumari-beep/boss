@@ -5493,7 +5493,6 @@ async def main():
                  ],
                 Q_COUNT: [
                     CallbackQueryHandler(handle_q_count, pattern="^qcnt_"),
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_q_count)
                  ],
                 TITLE: [
                     CallbackQueryHandler(handle_title, pattern="^title_"),
