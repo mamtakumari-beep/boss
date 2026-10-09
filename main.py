@@ -595,7 +595,7 @@ async def handle_final_topic_selection(update: Update, context: ContextTypes.DEF
     
     topic_chosen = query.data.replace("set_topic_", "").strip()
     
-    # 🟢 फिक्स मैपिंग डेटाबेस: शॉर्ट कोड्स को बड़े नाम असाइन करने के लिए
+    # 🟢 शार्ट कोड्स को बड़े नाम असाइन करने की मैपिंग
     topic_map = {
         # Polity Mapping
         "pol_1": "Making and Sources of Indian Constitution",
@@ -628,30 +628,42 @@ async def handle_final_topic_selection(update: Update, context: ContextTypes.DEF
         "lang_11": "English Grammar Subject Verb Agreement Errors",
         "lang_12": "English Vocabulary Synonyms Antonyms One Word Substitution",
         "lang_13": "English Grammar Prepositions and Articles"
-    }
+ }
     
-    # अगर चुना गया कोड हमारी मैपिंग डिक्शनरी में है, तो असली नाम निकालें
     if topic_chosen in topic_map:
         topic_chosen = topic_map[topic_chosen]
         
     context.user_data['topic'] = topic_chosen
     
+    # 1. पुराने इनलाइन बटन्स को हटाएँ
     try:
         await query.edit_message_reply_markup(reply_markup=None)
     except Exception:
         pass
         
+    # 2. कीबोर्ड बटन्स तैयार करें
     reply_keyboard = [['10', '20', '50', '70']]
-    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
     
-    await query.message.reply_text(
-        f"<blockquote>✅ Topic Saved: <b>{context.user_data['topic']}</b></blockquote>\n\n"
-        "<blockquote>🔢 <b>Step 2:</b> How many questions do you want?</blockquote>",
+    # 🔥 फिक्स: यहाँ input_field_placeholder और selective=False किया गया है ताकि कीबोर्ड हर हाल में ओपन हो
+    markup = ReplyKeyboardMarkup(
+        reply_keyboard, 
+        one_time_keyboard=True, 
+        resize_keyboard=True, 
+        selective=False,  # 👈 इसे False करें ताकि यह पूरे चैट के लिए एक्टिव हो
+        input_field_placeholder="Select question count..." # 👈 यूज़र को इनपुट बार में हिंट दिखेगी
+    )
+    
+    # 🔥 फिक्स: query.message की जगह सीधे context.bot.send_message का उपयोग करें
+    # इससे टेलीग्राम इसे एक फ्रेश और नया मैसेज मानेगा और कीबोर्ड को तुरंत पॉपअप कर देगा।
+    await context.bot.send_message(
+        chat_id=query.message.chat_id,
+        text=f"<blockquote>✅ Topic Saved: <b>{context.user_data['topic']}</b></blockquote>\n\n"
+             "<blockquote>🔢 <b>Step 2:</b> How many questions do you want?</blockquote>",
         parse_mode="HTML",
         reply_markup=markup
     )
     return Q_COUNT
-    
+
 async def handle_topic(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if not is_authorized(update): return TOPIC
     
