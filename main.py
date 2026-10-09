@@ -426,8 +426,8 @@ async def autoquiz_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     # 🌟 MODIFIED: अब सीधे सब्जेक्ट लिस्ट नहीं, बल्कि मोड सिलेक्ट करने के बटन्स दिखेंगे
     mode_keyboard = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("✍️ Text Mode (Type Topic)", callback_data="mode_text_input, style="primary"),
-            InlineKeyboardButton("📂 Subject Mode (Buttons)", callback_data="mode_button_select, style="primary")
+            InlineKeyboardButton("✍️ Text Mode (Type Topic)", callback_data="mode_text_input", style="primary"),
+            InlineKeyboardButton("📂 Subject Mode (Buttons)", callback_data="mode_button_select", style="primary")
         ]
     ])
     
