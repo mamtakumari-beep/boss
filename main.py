@@ -802,7 +802,7 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if not is_authorized(update): return DESCRIPTION
     
     text = update.message.text
-    context.user_data['description'] = "None" if text in ["/skipped", "Skip ⏭️"] else text
+    context.user_data['description'] = "None" if text in ["/skip"] else text
     
     # ✅ Selective Keyboard 4: Language Choice
     reply_keyboard = [['English', 'Hindi']]
