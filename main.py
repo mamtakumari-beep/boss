@@ -635,32 +635,23 @@ async def handle_final_topic_selection(update: Update, context: ContextTypes.DEF
         
     context.user_data['topic'] = topic_chosen
     
-    # 1. पुराने इनलाइन बटन्स को हटाएँ
-    try:
-        await query.edit_message_reply_markup(reply_markup=None)
-    except Exception:
-        pass
-        
-    # 2. कीबोर्ड बटन्स तैयार करें
-    reply_keyboard = [['10', '20', '50', '70']]
+    # 🟢 फ़िक्स: यहाँ सुंदर InlineKeyboardMarkup (इनलाइन बटन्स) बनाए गए हैं
+    # यूज़र बटन दबाएगा तो बोट को टेक्स्ट मैसेज '10' या '20' नहीं मिलेगा, बल्कि callback_data 'qcnt_10' मिलेगा।
+    inline_q_keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("10", callback_data="qcnt_10"),
+            InlineKeyboardButton("20", callback_data="qcnt_20"),
+            InlineKeyboardButton("50", callback_data="qcnt_50"),
+            InlineKeyboardButton("70", callback_data="qcnt_70")
+        ]
+    ])
     
-    # 🔥 फिक्स: यहाँ input_field_placeholder और selective=False किया गया है ताकि कीबोर्ड हर हाल में ओपन हो
-    markup = ReplyKeyboardMarkup(
-        reply_keyboard, 
-        one_time_keyboard=True, 
-        resize_keyboard=True, 
-        selective=True,  # 👈 इसे False करें ताकि यह पूरे चैट के लिए एक्टिव हो
-        input_field_placeholder="Select question count..." # 👈 यूज़र को इनपुट बार में हिंट दिखेगी
-    )
-    
-    # 🔥 फिक्स: query.message की जगह सीधे context.bot.send_message का उपयोग करें
-    # इससे टेलीग्राम इसे एक फ्रेश और नया मैसेज मानेगा और कीबोर्ड को तुरंत पॉपअप कर देगा।
-    await context.bot.send_message(
-        chat_id=query.message.chat_id,
+    # पुराने टॉपिक वाले इनलाइन बटन्स को एडिट करके वहीं पर क्वेश्चन काउंट बटन्स दिखाएँ
+    await query.edit_message_text(
         text=f"<blockquote>✅ Topic Saved: <b>{context.user_data['topic']}</b></blockquote>\n\n"
-             "<blockquote>🔢 <b>Step 2:</b> How many questions do you want?</blockquote>",
+             "<blockquote>🔢 <b>Step 2:</b> How many questions do you want? (Select from inline buttons below)</blockquote>",
         parse_mode="HTML",
-        reply_markup=markup
+        reply_markup=inline_q_keyboard
     )
     return Q_COUNT
 
