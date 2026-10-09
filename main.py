@@ -673,31 +673,58 @@ async def handle_topic(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     return Q_COUNT
 
 async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    if not is_authorized(update): return Q_COUNT
+    query = update.callback_query
     
-    user_text = update.message.text.strip()
+    if query:
+        # अगर यूज़र ने इनलाइन बटन पर क्लिक किया है
+        await query.answer()
+        user_text = query.data.replace("qcnt_", "").strip()  # 'qcnt_10' से '10' निकालें
+        msg_obj = query.message
+    else:
+        # अगर यूज़र ने हाथ से टाइप किया है
+        if not is_authorized(update): return Q_COUNT
+        user_text = update.message.text.strip()
+        msg_obj = update.message
+        
     allowed_counts = ['10', '20', '50', '70']
     
-    # 🚫 VALIDATION: Check if user sent something other than the buttons
+    # 🚫 इनपुट वैलिडेशन (अगर गलत इनपुट है तो बटन वापस दिखाओ)
     if user_text not in allowed_counts:
-        reply_keyboard = [['10', '20', '50', '70']]
-        markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
+        inline_q_keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("10", callback_data="qcnt_10"),
+                InlineKeyboardButton("20", callback_data="qcnt_20"),
+                InlineKeyboardButton("50", callback_data="qcnt_50"),
+                InlineKeyboardButton("70", callback_data="qcnt_70")
+            ]
+        ])
         
-        await update.message.reply_text(
-            "⚠️ <b>अवैध इनपुट!</b> कृपया नीचे दिए गए बटनों में से ही किसी एक संख्या को चुनें।\n"
-            "या मैन्युअली केवल 10, 20, 50, या 70 ही टाइप करें।",
-            parse_mode="HTML",
-            reply_markup=markup
-        )
-        return Q_COUNT # यूज़र को इसी स्टेप पर रोक कर रखेगा
+        error_msg = "⚠️ <b>अवैध इनपुट!</b> कृपया नीचे दिए गए बटनों में से ही किसी एक संख्या को चुनें।"
+        if query:
+            await query.edit_message_text(text=error_msg, reply_markup=inline_q_keyboard, parse_mode="HTML")
+        else:
+            await update.message.reply_text(text=error_msg, reply_markup=inline_q_keyboard, parse_mode="HTML")
+        return Q_COUNT 
         
+    # 🟢 डेटा सेव करें
     context.user_data['q_count'] = int(user_text)
-    await update.message.reply_text(
+    
+    success_text = (
         f"<blockquote>✅ Questions Count: <b>{context.user_data['q_count']}</b></blockquote>\n\n"
-        "<blockquote>📝 <b>Step 3:</b> Send me the Title of your quiz.</blockquote>",
-        parse_mode="HTML",
-        reply_markup=ReplyKeyboardRemove(selective=True)
+        "<blockquote>📝 <b>Step 3:</b> Send me the Title of your quiz.</blockquote>"
     )
+    
+    if query:
+        # 🔥 फिक्स: reply_markup=None सेट करने से बटन तुरंत डिलीट/क्लोज हो जाएगा
+        await query.edit_message_text(
+            text=success_text, 
+            parse_mode="HTML",
+            reply_markup=None
+        )
+    else:
+        # अगर यूज़र ने टाइप किया था, तो नॉर्मल मैसेज भेजें
+        await update.message.reply_text(text=success_text, parse_mode="HTML")
+        
     return TITLE
 
 async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
