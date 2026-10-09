@@ -1091,7 +1091,7 @@ async def handle_time_limit(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         )
         return TIME_LIMIT
     
-    context.user_data['time_limit'] = int(update.message.text.split()[0])
+    context.user_data['time_limit'] = int(user_text)
     
     topic = context.user_data.get('topic', 'General Knowledge')
     count = context.user_data.get('q_count', 5)
@@ -1099,99 +1099,83 @@ async def handle_time_limit(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     difficulty = context.user_data.get('difficulty', 'Medium')
     options_cnt = context.user_data.get('options_count', 4)
     
-    # 🎬 स्टेप 1: शुरुआती लोडिंग मैसेज (0 सेकंड)
-    generating_msg = await update.message.reply_text(
-        "<b>🚀 AI Quiz Generator</b>\n\n"
-        "CNM⬜⬜⬜⬜⬜⬜⬜⬜\n"
-        "🔎 Researching your topic...\n"
-        "⏳ please wait...",
-        parse_mode="HTML",
-        reply_markup=ReplyKeyboardRemove(selective=True)
-    )
+    msg_target = query.message if query else update.message
+    
+    # 🟢 FIXED: Clean up the old inline menu completely before showing AI animation loader
+    if query:
+        generating_msg = await query.edit_message_text(
+            text="<b>🚀 AI Quiz Generator</b>\n\nCNM⬜⬜⬜⬜⬜⬜⬜⬜\n🔎 Researching your topic...\n⏳ please wait...",
+            parse_mode="HTML",
+            reply_markup=None
+        )
+    else:
+        generating_msg = await update.message.reply_text(
+            "<b>🚀 AI Quiz Generator</b>\n\nCNM⬜⬜⬜⬜⬜⬜⬜⬜\n🔎 Researching your topic...\n⏳ please wait...",
+            parse_mode="HTML",
+            reply_markup=ReplyKeyboardRemove(selective=True)
+        )
     
     try:
-        # बैकग्राउंड में AI जनरेशन टास्क को शुरू करें
         task = asyncio.create_task(asyncio.to_thread(
             generate_bulk_questions_ai, topic, count, lang, difficulty, options_cnt
         ))
         
-        # --- ⏳ लाइव 3-3 सेकंड का डिलीट + न्यू मैसेज लूप ---
         try:
-            # स्टेप 2: 3 सेकंड का होल्ड
             await asyncio.sleep(3)
-            if not task.done(): # सिर्फ तभी बदलें जब टास्क अभी भी चल रहा हो
+            if not task.done():
                 try: await generating_msg.delete()
                 except: pass
-                generating_msg = await update.message.reply_text(
-                    "<b>🚀 AI Quiz Generator</b>\n\n"
-                    "🟪🟪🟪⬜⬜⬜⬜⬜⬜⬜⬜⬜\n"
-                    "🧠 Crafting questions...\n"
-                    "⏳ please wait...",
+                generating_msg = await msg_target.chat.send_message(
+                    "<b>🚀 AI Quiz Generator</b>\n\n🟪🟪🟪⬜⬜⬜⬜⬜⬜⬜⬜⬜\n🧠 Crafting questions...\n⏳ please wait...",
                     parse_mode="HTML"
                 )
                 
-            # स्टेप 3: और 4 सेकंड का होल्ड (कुल 7 सेकंड)
             await asyncio.sleep(4)
             if not task.done():
                 try: await generating_msg.delete()
                 except: pass
-                generating_msg = await update.message.reply_text(
-                    "<b>🚀 AI Quiz Generator</b>\n\n"
-                    "🟪🟪🟪🟪🟪🟪🟪⬜⬜⬜⬜⬜\n"
-                    "✍️ Writing options...\n"
-                    "⏳ please wait...",
+                generating_msg = await msg_target.chat.send_message(
+                    "<b>🚀 AI Quiz Generator</b>\n\n🟪🟪🟪🟪🟪🟪🟪⬜⬜⬜⬜⬜\n✍️ Writing options...\n⏳ please wait...",
                     parse_mode="HTML"
                 )
                 
-            # स्टेप 4: और 5 सेकंड का होल्ड (कुल 12 सेकंड - रीट्राई के लिए सेफ बफर)
             await asyncio.sleep(5)
             if not task.done():
                 try: await generating_msg.delete()
                 except: pass
-                generating_msg = await update.message.reply_text(
-                    "<b>🚀 AI Quiz Generator</b>\n\n"
-                    "🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪⬜⬜\n"
-                    "📟 Verifying answers...\n"
-                    "⏳ please wait...",
+                generating_msg = await msg_target.chat.send_message(
+                    "<b>🚀 AI Quiz Generator</b>\n\n🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪⬜⬜\n📟 Verifying answers...\n⏳ please wait...",
                     parse_mode="HTML"
                 )
-            
         except Exception as msg_err:
             logging.warning(f"Animation message sequence alert: {msg_err}")
 
-        # ⚡ AI का फाइनल रिजल्ट आने तक रुकें
         ai_questions = await task
         
-        # ❌ फेलियर हैंडलिंग (None और 0 दोनों स्थितियों के लिए सुरक्षित)
         if ai_questions is None or len(ai_questions) == 0:
             try: await generating_msg.delete()
             except: pass
-            await update.message.reply_text(
-                "❌ <b>AI Quiz Generator Error</b>\n\n"
-                "Server par heavy load ya error ke karan quiz generate nahi ho paya. Kripya thodi der baad fir se koshish karein.",
+            await msg_target.chat.send_message(
+                "❌ <b>AI Quiz Generator Error</b>\n\nServer par heavy load ya error ke karan quiz generate nahi ho paya. Kripya thodi der baad fir se koshish karein.",
                 parse_mode="HTML"
             )
             context.user_data.clear()
             return ConversationHandler.END
             
-        # 🎉 स्टेप 5: सफलतापूर्वक जनरेट होने पर फाइनल ग्रीन स्टेटस (Done)
         try:
             try: await generating_msg.delete()
             except: pass
-            generating_msg = await update.message.reply_text(
-                "<b>🚀 AI Quiz Generator</b>\n\n"
-                "Verified Answer's ✅\n"
-                "💯 Done generated...\n\n"
-                "🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩",
+            generating_msg = await msg_target.chat.send_message(
+                "<b>🚀 AI Quiz Generator</b>\n\nVerified Answer's ✅\n"
+                "💯 Done generated...\n\n🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩",
                 parse_mode="HTML"
             )
-            await asyncio.sleep(2) # यूज़र को ग्रीन बार देखने का थोड़ा समय दें
+            await asyncio.sleep(2)
             try: await generating_msg.delete()
             except: pass
         except Exception:
             pass
         
-        # FORMAT QUESTIONS PROPERLY
         formatted_questions = []
         for q in ai_questions:
             correct_idx = q.get("correct", 0)
@@ -1205,11 +1189,8 @@ async def handle_time_limit(update: Update, context: ContextTypes.DEFAULT_TYPE) 
                 correct_idx = 0
             
             formatted_questions.append({
-                "text": q.get("question", ""),
-                "options": options,
-                "correct": correct_idx,
-                "explanation": q.get("explanation", ""),
-                "pre_message": ""
+                "text": q.get("question", ""), "options": options, "correct": correct_idx,
+                "explanation": q.get("explanation", ""), "pre_message": ""
             })
         
         actual_count = len(formatted_questions)
@@ -1219,12 +1200,12 @@ async def handle_time_limit(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         
         context.user_data["ai_questions"] = formatted_questions
         context.user_data["quiz_build"] = {
-            "title": context.user_data.get("title", "AI Quiz"),
-            "description": context.user_data.get("description", ""),
-            "timer": context.user_data.get("time_limit", 30),
-            "questions": formatted_questions
+            "title": context.user_data.get("title", "AI Quiz"), "description": context.user_data.get("description", ""),
+            "timer": context.user_data.get("time_limit", 30), "questions": formatted_questions
         }
-        context.user_data["quiz_build_creator_id"] = update.message.from_user.id
+        
+        creator_id = query.from_user.id if query else update.message.from_user.id
+        context.user_data["quiz_build_creator_id"] = creator_id
         
         neg_keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("❌ No Negative (0.0)", callback_data="neg_0.0"), InlineKeyboardButton("📉 1/4th (-0.25)", callback_data="neg_0.25")],
@@ -1232,7 +1213,7 @@ async def handle_time_limit(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             [InlineKeyboardButton("📉 Heavy (-1.5)", callback_data="neg_1.5")]
         ])
         
-        await update.message.reply_text(
+        await msg_target.chat.send_message(
             f"<blockquote>🛅 <b>Select Negative Marking Schema:</b>{alert_text}</blockquote>\n\n"
             "<blockquote>Aap is quiz ke liye kitni negative marking set karna chahte hain?</blockquote>",
             reply_markup=neg_keyboard,
@@ -1245,15 +1226,13 @@ async def handle_time_limit(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         try: await generating_msg.delete()
         except: pass
         
-        # 429 एरर के लिए यूज़र फ्रेंडली मैसेज
         if "429" in str(e) or "too_many_requests" in str(e):
-            await update.message.reply_text(
-                "⚠️ <b>आज का फ्री लिमिट कोटा समाप्त हो चुका है!</b>\n\n"
-                "AI मॉडल की प्रतिदिन की सीमा (20 रिक्वेस्ट) पूरी हो गई है। कृपया कुछ समय बाद या कल दोबारा प्रयास करें।", 
+            await msg_target.chat.send_message(
+                "⚠️ <b>आज का फ्री लिमिट कोटा समाप्त हो चुका है!</b>\n\nAI मॉडल की प्रतिदिन की सीमा (20 रिक्वेस्ट) पूरी हो गई है। कृपया कुछ समय बाद या कल दोबारा प्रयास करें।", 
                 parse_mode="HTML"
             )
         else:
-            await update.message.reply_text("aapka quiz genrate karne me error aa gaya tha esliye cancel ho gaya aap fir se quiz generate kare", parse_mode="HTML")
+            await msg_target.chat.send_message("aapka quiz genrate karne me error aa gaya tha esliye cancel ho gaya aap fir se quiz generate kare", parse_mode="HTML")
             
         context.user_data.clear()
         return ConversationHandler.END
