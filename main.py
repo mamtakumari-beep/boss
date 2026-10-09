@@ -796,8 +796,9 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         context.user_data['title'] = title_text
         context.user_data["quiz_build"]["title"] = title_text
         
+        # इसे अपने कोड में जहां भी desc_inline_keyboard है, वहां अपडेट कर लें (जैसे handle_title के अंदर):
         desc_inline_keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("Skip Description ⏭️", callback_data="desc_skip")]
+            [{"text": "Skip Description ⏭️", "callback_data": "desc_skip", "style": "primary"}]
         ])
         
         sent_msg = await update.message.reply_text(
@@ -848,11 +849,11 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 except Exception:
                     pass
 
-    # अगले स्टेप (Language) के लिए इनलाइन कीबोर्ड
+    # 🟢 COLORED: Step 5 (Language) के लिए इनलाइन कीबोर्ड बटन्स को Green (success) कलर दिया गया है
     lang_inline_keyboard = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("English 🇬🇧", callback_data="lang_English"),
-            InlineKeyboardButton("Hindi 🇮🇳", callback_data="lang_Hindi")
+            {"text": "English 🇬🇧", "callback_data": "lang_English", "style": "success"},
+            {"text": "Hindi 🇮🇳", "callback_data": "lang_Hindi", "style": "success"}
         ]
     ])
     
@@ -865,7 +866,7 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
     else:
         await update.message.reply_text(
-            "<blockquote>🌐 <b>Step 5 — Language</b>\nChoose quiz output layout language:</blockquote>",
+            text="<blockquote>🌐 <b>Step 5 — Language</b>\nChoose quiz output layout language:</blockquote>",
             reply_markup=lang_inline_keyboard,
             parse_mode="HTML"
         )
