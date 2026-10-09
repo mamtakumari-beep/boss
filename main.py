@@ -602,9 +602,7 @@ async def handle_final_topic_selection(update: Update, context: ContextTypes.DEF
     
     topic_chosen = query.data.replace("set_topic_", "").strip()
     
-    # 🟢 फिक्स मैपिंग डेटाबेस: शॉर्ट कोड्स को बड़े नाम असाइन करने के लिए
     topic_map = {
-        # Polity Mapping
         "pol_1": "Making and Sources of Indian Constitution",
         "pol_2": "Preamble and Schedules of Indian Constitution",
         "pol_3": "Union and its Territory and Citizenship",
@@ -620,8 +618,6 @@ async def handle_final_topic_selection(update: Update, context: ContextTypes.DEF
         "pol_13": "Constitutional and Non Constitutional Bodies CAG NITI Aayog",
         "pol_14": "Important Constitutional Amendments of India",
         "pol_15": "Emergency Provisions in Indian Constitution",
-        
-        # Languages Mapping
         "lang_1": "Hindi Grammar Varnamala and Sandhi",
         "lang_2": "Hindi Grammar Sangya Sarvnam Kriya Avyay",
         "lang_3": "Hindi Grammar Samas Upsarg Pratyay",
@@ -637,26 +633,29 @@ async def handle_final_topic_selection(update: Update, context: ContextTypes.DEF
         "lang_13": "English Grammar Prepositions and Articles"
     }
     
-    # अगर चुना गया कोड हमारी मैपिंग डिक्शनरी में है, तो असली नाम निकालें
     if topic_chosen in topic_map:
         topic_chosen = topic_map[topic_chosen]
         
     context.user_data['topic'] = topic_chosen
     
-    try:
-        await query.edit_message_reply_markup(reply_markup=None)
-    except Exception:
-        pass
-        
-    reply_keyboard = [['10', '20', '50', '70']]
-    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
+    # 🟢 FIXED: ReplyKeyboardMarkup replaced with InlineKeyboardMarkup
+    count_inline_keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("10", callback_data="qcnt_10"),
+            InlineKeyboardButton("20", callback_data="qcnt_20"),
+            InlineKeyboardButton("50", callback_data="qcnt_50"),
+            InlineKeyboardButton("70", callback_data="qcnt_70")
+        ]
+    ])
     
-    await query.message.reply_text(
-        f"<blockquote>✅ Topic Saved: <b>{context.user_data['topic']}</b></blockquote>\n\n"
-        "<blockquote>🔢 <b>Step 2:</b> How many questions do you want?</blockquote>\n"
-        "<b>Type - | 10 | 20 | 50 | 70 |</b>",
+    await query.edit_message_text(
+        text=(
+            f"<blockquote>✅ Topic Saved: <b>{context.user_data['topic']}</b></blockquote>\n\n"
+            "<blockquote>🔢 <b>Step 2:</b> How many questions do you want?</blockquote>\n"
+            "<b>Niche diye gaye inline buttons se chunein:</b>"
+        ),
         parse_mode="HTML",
-        reply_markup=markup
+        reply_markup=count_inline_keyboard
     )
     return Q_COUNT
     
@@ -665,15 +664,21 @@ async def handle_topic(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     
     context.user_data['topic'] = update.message.text
     
-    # ✅ Selective Keyboard 2: Question Count
-    reply_keyboard = [['10', '20', '50', '70']]
-    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=False)
+    # 🟢 FIXED: ReplyKeyboardMarkup replaced with InlineKeyboardMarkup
+    count_inline_keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("10", callback_data="qcnt_10"),
+            InlineKeyboardButton("20", callback_data="qcnt_20"),
+            InlineKeyboardButton("50", callback_data="qcnt_50"),
+            InlineKeyboardButton("70", callback_data="qcnt_70")
+        ]
+    ])
     
     await update.message.reply_text(
         f"<blockquote>✅ Topic Saved: <b>{context.user_data['topic']}</b></blockquote>\n\n"
         "<blockquote>🔢 <b>Step 2:</b> How many questions do you want?</blockquote>",
         parse_mode="HTML",
-        reply_markup=markup
+        reply_markup=count_inline_keyboard
     )
     return Q_COUNT
 
@@ -683,19 +688,16 @@ async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     user_text = ""
     query = update.callback_query
     
-    # 1. Check if input came from the Question Count Inline Button
+    # 🟢 FIXED: Inline callback query data receive logic added
     if query:
         await query.answer()
         user_text = query.data.replace("qcnt_", "").strip()
-        try: await query.edit_message_reply_markup(reply_markup=None)
-        except Exception: pass
     elif update.message and update.message.text:
         user_text = update.message.text.strip()
         
     allowed_counts = ['10', '20', '50', '70']
     
     if user_text not in allowed_counts:
-        # Fallback if invalid input
         count_inline_keyboard = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton("10", callback_data="qcnt_10"),
@@ -715,7 +717,6 @@ async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     context.user_data['q_count'] = int(user_text)
     saved_topic = context.user_data.get('topic', 'AI Quiz')
     
-    # 🔥 2. Title Step Confirmation Inline Buttons (Yes / No)
     title_confirm_keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("Yes ✅", callback_data="title_use_topic"),
@@ -723,52 +724,58 @@ async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         ]
     ])
     
-    msg_obj = query.message if query else update.message
-    await msg_obj.reply_text(
-        f"<blockquote>✅ Questions Count: <b>{context.user_data['q_count']}</b></blockquote>\n\n"
-        f"🌟 <b>क्या आप क्विज़ का टाइटल वही रखना चाहते हैं जो टॉपिक का नाम है?</b>\n"
-        f"📝 <i>टॉपिक नाम: {saved_topic}</i>",
-        parse_mode="HTML",
-        reply_markup=title_confirm_keyboard
-    )
+    if query:
+        await query.edit_message_text(
+            text=(
+                f"<blockquote>✅ Questions Count: <b>{context.user_data['q_count']}</b></blockquote>\n\n"
+                f"🌟 <b>क्या आप क्विज़ का टाइटल वही रखना चाहते हैं जो टॉपिक का नाम है?</b>\n"
+                f"📝 <i>टॉपिक नाम: {saved_topic}</i>"
+            ),
+            parse_mode="HTML",
+            reply_markup=title_confirm_keyboard
+        )
+    else:
+        await update.message.reply_text(
+            f"<blockquote>✅ Questions Count: <b>{context.user_data['q_count']}</b></blockquote>\n\n"
+            f"🌟 <b>क्या आप क्विज़ का टाइटल वही रखना चाहते हैं जो टॉपिक का नाम है?</b>\n"
+            f"📝 <i>टॉपिक नाम: {saved_topic}</i>",
+            parse_mode="HTML",
+            reply_markup=title_confirm_keyboard
+        )
     return TITLE
 
 async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handles both custom text title input and Inline callback buttons for title step (Buttons Removed)"""
     if not is_authorized(update): return TITLE
     
-    # 🟢 SAFETY FIX: Ensure 'quiz_build' exists in user_data to prevent KeyError
     if "quiz_build" not in context.user_data:
         context.user_data["quiz_build"] = {"title": "", "description": "", "questions": []}
     
-    # Case 1: Agar user ne Inline Button (Yes/No) par click kiya hai
-    if update.callback_query:
-        query = update.callback_query
+    query = update.callback_query
+    
+    if query:
         await query.answer()
-        
         if query.data == "title_use_topic":
             topic_name = context.user_data.get('topic', 'AI Quiz')
             context.user_data['title'] = topic_name
             context.user_data["quiz_build"]["title"] = topic_name  
             
-            # 1. पहले पुराने इनलाइन बटन को पूरी तरह डिलीट या रिमूव करें
-            try: await query.message.delete()
-            except Exception: pass
+            # 🟢 FIXED: Replaced standard skip text keyboard with dynamic Inline skip button
+            desc_inline_keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton("Skip Description ⏭️", callback_data="desc_skip")]
+            ])
             
-            # 2. context.bot.send_message से फ्रेश मैसेज भेजें (बटन हटा दिए गए हैं)
-            await context.bot.send_message(
-                chat_id=query.message.chat_id,
+            await query.edit_message_text(
                 text=(
                     f"✅ Title Saved (Same as Topic): <b>{context.user_data['title']}</b>\n\n"
-                    "<blockquote>📝 <b>Step 4:</b> Send a Description for this quiz.</blockquote>\n"
-                    "<blockquote>or type /skip to skip this step.</blockquote>"
+                    "<blockquote>📝 <b>Step 4:</b> Send a Description for this quiz in chat.</blockquote>\n"
+                    "<blockquote>Or niche diye gaye <b>Skip Description</b> button par click kare.</blockquote>"
                 ),
-                parse_mode="HTML"
+                parse_mode="HTML",
+                reply_markup=desc_inline_keyboard
             )
             return DESCRIPTION
             
         elif query.data == "title_custom_name":
-            # 'No' click karne par message badal kar naya title chat me mangen
             await query.edit_message_text(
                 "📝 <b>कृपया अपनी क्विज़ के लिए एक नया Title चैट में टाइप करके भेजें:</b>",
                 parse_mode="HTML",
@@ -776,23 +783,26 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             )
             return TITLE
             
-    # Case 2: Agar user ne 'No' dabane ke baad chat me custom text title bheja hai
     if update.message and update.message.text:
         title_text = update.message.text.strip()
-        
         if len(title_text) > 128:
             await update.message.reply_text("⚠️ This title is too long. Please send a new one, 128 characters max.")
             return TITLE
             
         context.user_data['title'] = title_text
-        context.user_data["quiz_build"]["title"] = title_text  # Save to dict as well
+        context.user_data["quiz_build"]["title"] = title_text
         
-        # बिना किसी बटन के सीधे मैसेज रिप्लाई करें
+        # 🟢 FIXED: Inline skip button
+        desc_inline_keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("Skip Description ⏭️", callback_data="desc_skip")]
+        ])
+        
         await update.message.reply_text(
             f"✅ Title Saved: <b>{context.user_data['title']}</b>\n\n"
-            "<blockquote>📝 <b>Step 4:</b> Send a Description for this quiz.</blockquote>\n"
-            "<blockquote>or type /skip to skip this step.</blockquote>",
-            parse_mode="HTML"
+            "<blockquote>📝 <b>Step 4:</b> Send a Description for this quiz in chat.</blockquote>\n"
+            "<blockquote>Or niche diye gaye <b>Skip Description</b> button par click kare.</blockquote>",
+            parse_mode="HTML",
+            reply_markup=desc_inline_keyboard
         )
         return DESCRIPTION
 
@@ -801,130 +811,253 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if not is_authorized(update): return DESCRIPTION
     
-    text = update.message.text
-    context.user_data['description'] = "None" if text in ["/skip"] else text
+    query = update.callback_query
+    # 🟢 FIXED: Handle callback skip trigger safely
+    if query:
+        await query.answer()
+        context.user_data['description'] = "None"
+    else:
+        text = update.message.text.strip()
+        context.user_data['description'] = "None" if text in ["/skipped", "Skip ⏭️", "/skip"] else text
     
-    # ✅ Selective Keyboard 4: Language Choice
-    reply_keyboard = [['English', 'Hindi']]
-    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
+    # 🟢 FIXED: ReplyKeyboardMarkup replaced with InlineKeyboardMarkup for Language Choice
+    lang_inline_keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("English 🇬🇧", callback_data="lang_English"),
+            InlineKeyboardButton("Hindi 🇮🇳", callback_data="lang_Hindi")
+        ]
+    ])
     
-    await update.message.reply_text(
-        "<blockquote>🌐 <b>Step 5 — Language</b>\nChoose quiz output layout language:</blockquote>",
-        reply_markup=markup,
-        parse_mode="HTML"
-    )
+    msg_target = query.message if query else update.message
+    if query:
+        await query.edit_message_text(
+            text="<blockquote>🌐 <b>Step 5 — Language</b>\nChoose quiz output layout language:</blockquote>",
+            reply_markup=lang_inline_keyboard,
+            parse_mode="HTML"
+        )
+    else:
+        await update.message.reply_text(
+            "<blockquote>🌐 <b>Step 5 — Language</b>\nChoose quiz output layout language:</blockquote>",
+            reply_markup=lang_inline_keyboard,
+            parse_mode="HTML"
+        )
     return LANGUAGE
 
 async def handle_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if not is_authorized(update): return LANGUAGE
     
-    user_text = update.message.text.strip()
-    allowed_langs = ['English', 'Hindi']
+    query = update.callback_query
+    user_text = ""
     
+    # 🟢 FIXED: Extract string from inline callback data
+    if query:
+        await query.answer()
+        user_text = query.data.replace("lang_", "").strip()
+    elif update.message and update.message.text:
+        user_text = update.message.text.strip()
+        
+    allowed_langs = ['English', 'Hindi']
     if user_text not in allowed_langs:
-        reply_keyboard = [['English', 'Hindi']]
-        markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
-        await update.message.reply_text(
+        lang_inline_keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("English 🇬🇧", callback_data="lang_English"),
+                InlineKeyboardButton("Hindi 🇮🇳", callback_data="lang_Hindi")
+            ]
+        ])
+        msg_target = query.message if query else update.message
+        await msg_target.reply_text(
             "⚠️ <b>अवैध इनपुट!</b> कृपया नीचे दिए गए बटनों में से ही भाषा चुनें:",
-            reply_markup=markup,
+            reply_markup=lang_inline_keyboard,
             parse_mode="HTML"
         )
         return LANGUAGE
 
     context.user_data['language'] = user_text
     
-    reply_keyboard = [['With Explanation', 'No Explanation']]
-    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
+    # 🟢 FIXED: ReplyKeyboardMarkup replaced with InlineKeyboardMarkup for Explanation
+    expl_inline_keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("With Explanation ✨", callback_data="expl_With Explanation"),
+            InlineKeyboardButton("No Explanation ❌", callback_data="expl_No Explanation")
+        ]
+    ])
     
-    await update.message.reply_text(
-        "<blockquote>✨ <b>Step 6 — Explanation</b>\nDo you want explanations?</blockquote>",
-        reply_markup=markup,
-        parse_mode="HTML"
-    )
+    if query:
+        await query.edit_message_text(
+            text="<blockquote>✨ <b>Step 6 — Explanation</b>\nDo you want explanations?</blockquote>",
+            reply_markup=expl_inline_keyboard,
+            parse_mode="HTML"
+        )
+    else:
+        await update.message.reply_text(
+            "<blockquote>✨ <b>Step 6 — Explanation</b>\nDo you want explanations?</blockquote>",
+            reply_markup=expl_inline_keyboard,
+            parse_mode="HTML"
+        )
     return EXPLANATION
 
 async def handle_explanation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if not is_authorized(update): return EXPLANATION
     
-    user_text = update.message.text.strip()
-    allowed_expl = ['With Explanation', 'No Explanation']
+    query = update.callback_query
+    user_text = ""
     
+    # 🟢 FIXED: Extract data from callback query
+    if query:
+        await query.answer()
+        user_text = query.data.replace("expl_", "").strip()
+    elif update.message and update.message.text:
+        user_text = update.message.text.strip()
+        
+    allowed_expl = ['With Explanation', 'No Explanation']
     if user_text not in allowed_expl:
-        reply_keyboard = [['With Explanation', 'No Explanation']]
-        markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
-        await update.message.reply_text(
+        expl_inline_keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("With Explanation ✨", callback_data="expl_With Explanation"),
+                InlineKeyboardButton("No Explanation ❌", callback_data="expl_No Explanation")
+            ]
+        ])
+        msg_target = query.message if query else update.message
+        await msg_target.reply_text(
             "⚠️ <b>अवैध इनपुट!</b> कृपया नीचे दिए गए बटनों में से ही चुनें:",
-            reply_markup=markup,
+            reply_markup=expl_inline_keyboard,
             parse_mode="HTML"
         )
         return EXPLANATION
 
     context.user_data['explanation'] = user_text
     
-    reply_keyboard = [['Easy', 'Medium', 'Hard']]
-    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
+    # 🟢 FIXED: ReplyKeyboardMarkup replaced with InlineKeyboardMarkup for Difficulty
+    diff_inline_keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("Easy 🟢", callback_data="diff_Easy"),
+            InlineKeyboardButton("Medium 🟡", callback_data="diff_Medium"),
+            InlineKeyboardButton("Hard 🔴", callback_data="diff_Hard")
+        ]
+    ])
     
-    await update.message.reply_text(
-        "<blockquote>⚡ <b>Step 7 — Difficulty</b>\nChoose calculation difficulty:</blockquote>",
-        reply_markup=markup,
-        parse_mode="HTML"
-    )
+    if query:
+        await query.edit_message_text(
+            text="<blockquote>⚡ <b>Step 7 — Difficulty</b>\nChoose calculation difficulty:</blockquote>",
+            reply_markup=diff_inline_keyboard,
+            parse_mode="HTML"
+        )
+    else:
+        await update.message.reply_text(
+            "<blockquote>⚡ <b>Step 7 — Difficulty</b>\nChoose calculation difficulty:</blockquote>",
+            reply_markup=diff_inline_keyboard,
+            parse_mode="HTML"
+        )
     return DIFFICULTY
 
 async def handle_difficulty(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if not is_authorized(update): return DIFFICULTY
     
-    user_text = update.message.text.strip()
-    allowed_diff = ['Easy', 'Medium', 'Hard']
+    query = update.callback_query
+    user_text = ""
     
+    # 🟢 FIXED: Extract difficulty string from callback data
+    if query:
+        await query.answer()
+        user_text = query.data.replace("diff_", "").strip()
+    elif update.message and update.message.text:
+        user_text = update.message.text.strip()
+        
+    allowed_diff = ['Easy', 'Medium', 'Hard']
     if user_text not in allowed_diff:
-        reply_keyboard = [['Easy', 'Medium', 'Hard']]
-        markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
-        await update.message.reply_text(
+        diff_inline_keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("Easy 🟢", callback_data="diff_Easy"),
+                InlineKeyboardButton("Medium 🟡", callback_data="diff_Medium"),
+                InlineKeyboardButton("Hard 🔴", callback_data="diff_Hard")
+            ]
+        ])
+        msg_target = query.message if query else update.message
+        await msg_target.reply_text(
             "⚠️ <b>अवैध इनपुट!</b> कृपया नीचे दिए गए बटनों में से कठिनाई का स्तर चुनें:",
-            reply_markup=markup,
+            reply_markup=diff_inline_keyboard,
             parse_mode="HTML"
         )
         return DIFFICULTY
 
     context.user_data['difficulty'] = user_text
     
-    reply_keyboard = [['2 Options', '3 Options', '4 Options']]
-    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
+    # 🟢 FIXED: ReplyKeyboardMarkup replaced with InlineKeyboardMarkup for Options Count
+    opts_inline_keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("2 Options", callback_data="opts_2"),
+            InlineKeyboardButton("3 Options", callback_data="opts_3"),
+            InlineKeyboardButton("4 Options", callback_data="opts_4")
+        ]
+    ])
     
-    await update.message.reply_text(
-        "<blockquote>🔥 <b>Step 8 — Option Count</b>\nHow many choices per card?</blockquote>",
-        reply_markup=markup,
-        parse_mode="HTML"
-    )
+    if query:
+        await query.edit_message_text(
+            text="<blockquote>🔥 <b>Step 8 — Option Count</b>\nHow many choices per card?</blockquote>",
+            reply_markup=opts_inline_keyboard,
+            parse_mode="HTML"
+        )
+    else:
+        await update.message.reply_text(
+            "<blockquote>🔥 <b>Step 8 — Option Count</b>\nHow many choices per card?</blockquote>",
+            reply_markup=opts_inline_keyboard,
+            parse_mode="HTML"
+        )
     return OPTIONS_COUNT
 
 async def handle_options_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if not is_authorized(update): return OPTIONS_COUNT
     
-    user_text = update.message.text.strip()
-    allowed_opts = ['2 Options', '3 Options', '4 Options']
+    query = update.callback_query
+    user_text = ""
     
+    # 🟢 FIXED: Extract option index string from callback data
+    if query:
+        await query.answer()
+        user_text = query.data.replace("opts_", "").strip()
+    elif update.message and update.message.text:
+        user_text = update.message.text.strip().split()[0]
+        
+    allowed_opts = ['2', '3', '4']
     if user_text not in allowed_opts:
-        reply_keyboard = [['2 Options', '3 Options', '4 Options']]
-        markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
-        await update.message.reply_text(
+        opts_inline_keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("2 Options", callback_data="opts_2"),
+                InlineKeyboardButton("3 Options", callback_data="opts_3"),
+                InlineKeyboardButton("4 Options", callback_data="opts_4")
+            ]
+        ])
+        msg_target = query.message if query else update.message
+        await msg_target.reply_text(
             "⚠️ <b>अवैध इनपुट!</b> कृपया नीचे दिए गए बटनों में से विकल्पों की संख्या चुनें:",
-            reply_markup=markup,
+            reply_markup=opts_inline_keyboard,
             parse_mode="HTML"
         )
         return OPTIONS_COUNT
 
-    context.user_data['options_count'] = int(user_text.split()[0])
+    context.user_data['options_count'] = int(user_text)
     
-    reply_keyboard = [['10 sec', '15 sec', '30 sec']]
-    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
+    # 🟢 FIXED: ReplyKeyboardMarkup replaced with InlineKeyboardMarkup for Ticker/Timer duration
+    time_inline_keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("10 sec ⏱", callback_data="time_10"),
+            InlineKeyboardButton("15 sec ⏱", callback_data="time_15"),
+            InlineKeyboardButton("30 sec ⏱", callback_data="time_30")
+        ]
+    ])
     
-    await update.message.reply_text(
-        "<blockquote>⏱ <b>Step 9 — Time Limit</b>\nSet ticker duration:</blockquote>",
-        reply_markup=markup,
-        parse_mode="HTML"
-    )
+    if query:
+        await query.edit_message_text(
+            text="<blockquote>⏱ <b>Step 9 — Time Limit</b>\nSet ticker duration:</blockquote>",
+            reply_markup=time_inline_keyboard,
+            parse_mode="HTML"
+        )
+    else:
+        await update.message.reply_text(
+            "<blockquote>⏱ <b>Step 9 — Time Limit</b>\nSet ticker duration:</blockquote>",
+            reply_markup=time_inline_keyboard,
+            parse_mode="HTML"
+        )
     return TIME_LIMIT
 
 async def handle_time_limit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
