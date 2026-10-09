@@ -5386,7 +5386,7 @@ async def main():
             entry_points=[CommandHandler("autoquiz", autoquiz_start)],
             states={
                 TOPIC: [
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_topic), # पुराना लॉजिक वैसे ही रहेगा
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_topic),
                     CallbackQueryHandler(handle_subject_navigation, pattern="^sub_"),
                     CallbackQueryHandler(handle_final_topic_selection, pattern="^set_topic_"),
                     CallbackQueryHandler(autoquiz_start, pattern="^back_to_subjects_nav$")
@@ -5400,18 +5400,33 @@ async def main():
                     MessageHandler(filters.TEXT & ~filters.COMMAND, handle_title)
                  ],
                 DESCRIPTION: [
-                        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_description),
-                        CommandHandler("skip", handle_description)
-                    ],
-                LANGUAGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_language)],
-                EXPLANATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_explanation)],
-                DIFFICULTY: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_difficulty)],
-                OPTIONS_COUNT: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_options_count)],
-                TIME_LIMIT: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_time_limit)],
-                NEGATIVE: [CallbackQueryHandler(handle_negative_and_finish, pattern="^neg_")],  # ✅ Callback handler
+                    CallbackQueryHandler(handle_description, pattern="^desc_skip$"),
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_description)
+                ],
+                LANGUAGE: [
+                    CallbackQueryHandler(handle_language, pattern="^lang_"),
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_language)
+                ],
+                EXPLANATION: [
+                    CallbackQueryHandler(handle_explanation, pattern="^expl_"),
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_explanation)
+                ],
+                DIFFICULTY: [
+                    CallbackQueryHandler(handle_difficulty, pattern="^diff_"),
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_difficulty)
+                ],
+                OPTIONS_COUNT: [
+                    CallbackQueryHandler(handle_options_count, pattern="^opts_"),
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_options_count)
+                ],
+                TIME_LIMIT: [
+                    CallbackQueryHandler(handle_time_limit, pattern="^time_"),
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_time_limit)
+                ],
+                NEGATIVE: [CallbackQueryHandler(handle_negative_and_finish, pattern="^neg_")],
             },
             fallbacks=[CommandHandler("cancel", cancel)],
-        )
+       )
 
         # ✅ FIXED: Use 'app' instead of 'application'
         app.add_handler(CommandHandler("start", start))
