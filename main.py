@@ -755,9 +755,9 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             try: await query.message.delete()
             except Exception: pass
             
-            # 2. selective=False करें ताकि बटन हर हाल में स्क्रीन पर आ जाए
-            reply_keyboard = [['Skip ⏭️']]
-            markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=False)
+            # 2. 🔄 ReplyKeyboardMarkup ki jagah InlineKeyboardMarkup use karein
+            inline_keyboard = [[InlineKeyboardButton("Skip ⏭️", callback_data="skip_description")]]
+            markup = InlineKeyboardMarkup(inline_keyboard)
             
             # 3. query.message.reply_text के बजाय context.bot.send_message से फ्रेश मैसेज भेजें
             await context.bot.send_message(
@@ -792,8 +792,9 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         context.user_data['title'] = title_text
         context.user_data["quiz_build"]["title"] = title_text  # Save to dict as well
         
-        reply_keyboard = [['Skip ⏭️']]
-        markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
+        # 🔄 ReplyKeyboardMarkup ki jagah InlineKeyboardMarkup use karein
+        inline_keyboard = [[InlineKeyboardButton("Skip ⏭️", callback_data="skip_description")]]
+        markup = InlineKeyboardMarkup(inline_keyboard)
         
         await update.message.reply_text(
             f"✅ Title Saved: <b>{context.user_data['title']}</b>\n\n"
