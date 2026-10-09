@@ -685,38 +685,21 @@ async def handle_topic(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if not is_authorized(update): return Q_COUNT
     
-    user_text = ""
     query = update.callback_query
     
-    # 🟢 FIXED: Inline callback query data receive logic added
-    if query:
-        await query.answer()
-        user_text = query.data.replace("qcnt_", "").strip()
-    elif update.message and update.message.text:
-        user_text = update.message.text.strip()
+    # 🟢 अगर इनपुट बटन से नहीं आया है (यानी किसी ने टेक्स्ट लिखा है), तो उसे पूरी तरह इग्नोर करें
+    if not query:
+        return Q_COUNT  
         
-    allowed_counts = ['10', '20', '50', '70']
+    await query.answer()
     
-    if user_text not in allowed_counts:
-        count_inline_keyboard = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("10", callback_data="qcnt_10"),
-                InlineKeyboardButton("20", callback_data="qcnt_20"),
-                InlineKeyboardButton("50", callback_data="qcnt_50"),
-                InlineKeyboardButton("70", callback_data="qcnt_70")
-            ]
-        ])
-        msg_target = query.message if query else update.message
-        await msg_target.reply_text(
-            "⚠️ <b>अवैध इनपुट!</b> कृपया नीचे दिए गए इनलाइन बटनों में से ही किसी एक संख्या को चुनें:",
-            parse_mode="HTML",
-            reply_markup=count_inline_keyboard
-        )
-        return Q_COUNT
-        
+    # बटन से वैल्यू निकालें
+    user_text = query.data.replace("qcnt_", "").strip()
     context.user_data['q_count'] = int(user_text)
+    
     saved_topic = context.user_data.get('topic', 'AI Quiz')
     
+    # अगले स्टेप (TITLE) के लिए इनलाइन बटन तैयार करें
     title_confirm_keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("Yes ✅", callback_data="title_use_topic"),
@@ -724,24 +707,16 @@ async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         ]
     ])
     
-    if query:
-        await query.edit_message_text(
-            text=(
-                f"<blockquote>✅ Questions Count: <b>{context.user_data['q_count']}</b></blockquote>\n\n"
-                f"🌟 <b>क्या आप क्विज़ का टाइटल वही रखना चाहते हैं जो टॉपिक का नाम है?</b>\n"
-                f"📝 <i>टॉपिक नाम: {saved_topic}</i>"
-            ),
-            parse_mode="HTML",
-            reply_markup=title_confirm_keyboard
-        )
-    else:
-        await update.message.reply_text(
+    # पुराना कीबोर्ड साफ़ करके नया मैसेज दिखाएं
+    await query.edit_message_text(
+        text=(
             f"<blockquote>✅ Questions Count: <b>{context.user_data['q_count']}</b></blockquote>\n\n"
             f"🌟 <b>क्या आप क्विज़ का टाइटल वही रखना चाहते हैं जो टॉपिक का नाम है?</b>\n"
-            f"📝 <i>टॉपिक नाम: {saved_topic}</i>",
-            parse_mode="HTML",
-            reply_markup=title_confirm_keyboard
-        )
+            f"📝 <i>टॉपिक नाम: {saved_topic}</i>"
+        ),
+        parse_mode="HTML",
+        reply_markup=title_confirm_keyboard
+    )
     return TITLE
 
 async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
