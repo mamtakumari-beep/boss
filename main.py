@@ -5496,36 +5496,31 @@ async def main():
                  ],
                 TITLE: [
                     CallbackQueryHandler(handle_title, pattern="^title_"),
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_title)
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_title) # ✅ मैसेज इनपुट चालू है
                  ],
                 DESCRIPTION: [
                     CallbackQueryHandler(handle_description, pattern="^desc_skip$"),
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_description)
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_description) # ✅ मैसेज इनपुट चालू है
                 ],
                 LANGUAGE: [
                     CallbackQueryHandler(handle_language, pattern="^lang_"),
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_language)
                 ],
                 EXPLANATION: [
                     CallbackQueryHandler(handle_explanation, pattern="^expl_"),
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_explanation)
                 ],
                 DIFFICULTY: [
                     CallbackQueryHandler(handle_difficulty, pattern="^diff_"),
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_difficulty)
                 ],
                 OPTIONS_COUNT: [
                     CallbackQueryHandler(handle_options_count, pattern="^opts_"),
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_options_count)
                 ],
                 TIME_LIMIT: [
                     CallbackQueryHandler(handle_time_limit, pattern="^time_"),
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_time_limit)
                 ],
                 NEGATIVE: [CallbackQueryHandler(handle_negative_and_finish, pattern="^neg_")],
             },
             fallbacks=[CommandHandler("cancel", cancel)],
-       )
+        )
 
         # ✅ FIXED: Use 'app' instead of 'application'
         app.add_handler(CommandHandler("start", start))
