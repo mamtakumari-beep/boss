@@ -672,21 +672,37 @@ async def handle_topic(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if not is_authorized(update): return Q_COUNT
     
-    user_text = update.message.text.strip()
+    user_text = ""
+    query = update.callback_query
+    
+    # 1. Check if input came from the Question Count Inline Button
+    if query:
+        await query.answer()
+        user_text = query.data.replace("qcnt_", "").strip()
+        try: await query.edit_message_reply_markup(reply_markup=None)
+        except Exception: pass
+    elif update.message and update.message.text:
+        user_text = update.message.text.strip()
+        
     allowed_counts = ['10', '20', '50', '70']
     
-    # 🚫 VALIDATION: Check if user sent something other than the buttons
     if user_text not in allowed_counts:
-        reply_keyboard = [['10', '20', '50', '70']]
-        markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
-        
-        await update.message.reply_text(
-            "⚠️ <b>अवैध इनपुट!</b> कृपया नीचे दिए गए बटनों में से ही किसी एक संख्या को चुनें।\n"
-            "या मैन्युअली केवल 10, 20, 50, या 70 ही टाइप करें।",
+        # Fallback if invalid input
+        count_inline_keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("10", callback_data="qcnt_10"),
+                InlineKeyboardButton("20", callback_data="qcnt_20"),
+                InlineKeyboardButton("50", callback_data="qcnt_50"),
+                InlineKeyboardButton("70", callback_data="qcnt_70")
+            ]
+        ])
+        msg_target = query.message if query else update.message
+        await msg_target.reply_text(
+            "⚠️ <b>अवैध इनपुट!</b> कृपया नीचे दिए गए इनलाइन बटनों में से ही किसी एक संख्या को चुनें:",
             parse_mode="HTML",
-            reply_markup=markup
+            reply_markup=count_inline_keyboard
         )
-    return Q_COUNT
+        return Q_COUNT
         
     context.user_data['q_count'] = int(user_text)
     saved_topic = context.user_data.get('topic', 'AI Quiz')
