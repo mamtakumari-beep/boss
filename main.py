@@ -681,7 +681,7 @@ async def handle_final_topic_selection(update: Update, context: ContextTypes.DEF
     await query.edit_message_text(
         text=(
             f"<blockquote>✅ Topic Saved: <b>{context.user_data['topic']}</b></blockquote>\n\n"
-            "✨ <b>Step 2: How many questions do you want?</b>"
+            "<blockquote>✨ Step 2:</blockquote><b>How many questions do you want?</b>"
         ),
         parse_mode="HTML",
         reply_markup=count_inline_keyboard
@@ -706,7 +706,7 @@ async def handle_topic(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     await update.message.reply_text(
         text=(
             f"<blockquote>✅ Topic Saved: <b>{context.user_data['topic']}</b></blockquote>\n\n"
-            "✨ <b>Step 2: How many questions do you want?</b>"
+            "<blockquote>✨ Step 2:</blockquote><b>How many questions do you want?</b>"
         ),
         parse_mode="HTML",
         reply_markup=count_inline_keyboard
@@ -735,7 +735,7 @@ async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     await query.edit_message_text(
         text=(
             f"<blockquote>✅ Questions Count: <b>{context.user_data['q_count']}</b></blockquote>\n\n"
-            f"🌟 <b>क्या आप क्विज़ का टाइटल वही रखना चाहते हैं जो टॉपिक का नाम है?</b>\n"
+            f"💫 <b>क्या आप क्विज़ का टाइटल वही रखना चाहते हैं जो टॉपिक का नाम है?</b>\n"
             f"📝 <i>टॉपिक नाम: {saved_topic}</i>"
         ),
         parse_mode="HTML",
@@ -766,9 +766,9 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             # मैसेज सेंड करके उसकी ID मेमोरी में सेव कर रहे हैं
             sent_msg = await query.edit_message_text(
                 text=(
-                    f"✅ Title Saved (Same as Topic): <b>{context.user_data['title']}</b>\n\n"
+                    f"<blockquote>✅ Title Saved (Same as Topic): <b>{context.user_data['title']}</b></blockquote>\n\n"
                     "<blockquote>📝 <b>Step 4:</b> Send a Description for this quiz in chat.</blockquote>\n"
-                    "<blockquote>or niche diye gaye <b>Skip Description</b> button par click kare.</blockquote>"
+                    "<b>Or Skip Description button par click kare.</b>"
                 ),
                 parse_mode="HTML",
                 reply_markup=desc_inline_keyboard
@@ -801,9 +801,9 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         ])
         
         sent_msg = await update.message.reply_text(
-            f"✅ Title Saved: <b>{context.user_data['title']}</b>\n\n"
+            f"<blockquote>✅ Title Saved: <b>{context.user_data['title']}</b></blockquote>\n\n"
             "<blockquote>📝 <b>Step 4:</b> Send a Description for this quiz in chat.</blockquote>\n"
-            "<blockquote>or niche diye gaye <b>Skip Description</b> button par click kare.</blockquote>",
+            "<b>Or Skip Description button par click kare.</b>",
             parse_mode="HTML",
             reply_markup=desc_inline_keyboard
         )
@@ -859,13 +859,13 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
     # यदि बटन दबाया था तो उसी मेसेज को एडिट करेगा, यदि टेक्स्ट भेजा था तो नया फ्रेश मेसेज भेजेगा
     if query:
         await query.edit_message_text(
-            text="<blockquote>🌐 <b>Step 5 — Language</b>\nChoose quiz output layout language:</blockquote>",
+            text="<blockquote>🌐 Step 5 — Language</blockquote>\n<b>Choose quiz output layout language:</b>",
             reply_markup=lang_inline_keyboard,
             parse_mode="HTML"
         )
     else:
         await update.message.reply_text(
-            text="<blockquote>🌐 <b>Step 5 — Language</b>\nChoose quiz output layout language:</blockquote>",
+            text="<blockquote>🌐 Step 5 — Language</blockquote>\n<b>Choose quiz output layout language:</b>",
             reply_markup=lang_inline_keyboard,
             parse_mode="HTML"
         )
@@ -891,7 +891,7 @@ async def handle_language(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     ])
     
     await query.edit_message_text(
-        text="<blockquote>✨ <b>Step 6 — Explanation</b>\nDo you want explanations?</blockquote>",
+        text="<blockquote>✨ Step 6 — Explanation</blockquote>\n<b>Do you want explanations?</b>",
         reply_markup=expl_inline_keyboard,
         parse_mode="HTML"
     )
@@ -913,14 +913,14 @@ async def handle_explanation(update: Update, context: ContextTypes.DEFAULT_TYPE)
     # इसे अपने मुख्य कोड में handle_explanation फ़ंक्शन के अंदर बदलें:
     diff_inline_keyboard = InlineKeyboardMarkup([
         [
-            {"text": "Easy 🟢", "callback_data": "diff_Easy", "style": "primary"},
-            {"text": "Medium 🟡", "callback_data": "diff_Medium", "style": "primary"},
-            {"text": "Hard 🔴", "callback_data": "diff_Hard", "style": "primary"}
+            {"text": "Easy", "callback_data": "diff_Easy", "style": "primary"},
+            {"text": "Medium", "callback_data": "diff_Medium", "style": "primary"},
+            {"text": "Hard", "callback_data": "diff_Hard", "style": "primary"}
         ]
     ])
     
     await query.edit_message_text(
-        text="<blockquote>⚡ <b>Step 7 — Difficulty</b>\nChoose calculation difficulty:</blockquote>",
+        text="<blockquote>⚡ Step 7 — Difficulty</blockquote>\n<b>Choose calculation difficulty:</b>",
         reply_markup=diff_inline_keyboard,
         parse_mode="HTML"
     )
@@ -949,7 +949,7 @@ async def handle_difficulty(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     ])
     
     await query.edit_message_text(
-        text="<blockquote>🔥 <b>Step 8 — Option Count</b>\nHow many choices per card?</blockquote>",
+        text="<blockquote>🔥 Step 8 — Option Count</blockquote>\n<b>How many choices per card?</b>",
         reply_markup=opts_inline_keyboard,
         parse_mode="HTML"
     )
@@ -978,7 +978,7 @@ async def handle_options_count(update: Update, context: ContextTypes.DEFAULT_TYP
     ])
     
     await query.edit_message_text(
-        text="<blockquote>⏱ <b>Step 9 — Time Limit</b>\nSet ticker duration:</blockquote>",
+        text="<blockquote>⏱ Step 9 — Time Limit</blockquote>\n<b>Set ticker duration:</b>",
         reply_markup=time_inline_keyboard,
         parse_mode="HTML"
     )
