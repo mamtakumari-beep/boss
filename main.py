@@ -398,7 +398,6 @@ CRITICAL RULES:
         
 # --- BOT ROUTINES & HANDLERS ---
 async def autoquiz_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    # query वेरिएबल को सही ढंग से डिफाइन किया गया है
     query = update.callback_query
     msg_obj = query.message if query else update.message
     user_id = query.from_user.id if query else update.message.from_user.id
@@ -407,13 +406,11 @@ async def autoquiz_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     
     allowed_ids = get_allowed_ids()
     
-    # 1. ग्रुप आईडी सुरक्षा जाँच (sirf group ke liye)
     if chat_type in ["group", "supergroup"]:
         if SUPPORT_GROUP_ID and chat_id != SUPPORT_GROUP_ID:
             await msg_obj.reply_text("❌ <b>Security Error:</b> Yah command is group me allowed nahi hai.", parse_mode="HTML")
             return ConversationHandler.END
             
-    # 2. यूज़र सुरक्षा जाँच (Group aur Private Chat dono ke liye)
     if user_id != OWNER_ID and user_id not in allowed_ids:
         await msg_obj.reply_text("❌ <b>Sorry!</b> Yah command keval authorized users hi use kar sakte hain.", parse_mode="HTML")
         return ConversationHandler.END
@@ -423,11 +420,11 @@ async def autoquiz_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     context.user_data.clear()
     
-    # 🌟 MODIFIED: अब सीधे सब्जेक्ट लिस्ट नहीं, बल्कि मोड सिलेक्ट करने के बटन्स दिखेंगे
+    # 🌟 Raw dict structure to inject button colors (Blue & Green)
     mode_keyboard = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("✍️ Text Mode (Type Topic)", callback_data="mode_text_input", "style": "primary"),
-            InlineKeyboardButton("📂 Subject Mode (Buttons)", callback_data="mode_button_select", "style": "primary")
+            {"text": "✍️ Text Mode (Type Topic)", "callback_data": "mode_text_input", "style": "primary"},
+            {"text": "📂 Subject Mode (Buttons)", "callback_data": "mode_button_select", "style": "success"}
         ]
     ])
     
