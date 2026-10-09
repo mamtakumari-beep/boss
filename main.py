@@ -649,7 +649,7 @@ async def handle_final_topic_selection(update: Update, context: ContextTypes.DEF
         reply_keyboard, 
         one_time_keyboard=True, 
         resize_keyboard=True, 
-        selective=False,  # 👈 इसे False करें ताकि यह पूरे चैट के लिए एक्टिव हो
+        selective=True,  # 👈 इसे False करें ताकि यह पूरे चैट के लिए एक्टिव हो
         input_field_placeholder="Select question count..." # 👈 यूज़र को इनपुट बार में हिंट दिखेगी
     )
     
