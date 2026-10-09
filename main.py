@@ -676,19 +676,20 @@ async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     query = update.callback_query
     
     if query:
-        # अगर यूज़र ने इनलाइन बटन पर क्लिक किया है
+        # ✅ सबसे पहले answer() करो
         await query.answer()
-        user_text = query.data.replace("qcnt_", "").strip()  # 'qcnt_10' से '10' निकालें
+        
+        user_text = query.data.replace("qcnt_", "").strip()
         msg_obj = query.message
     else:
-        # अगर यूज़र ने हाथ से टाइप किया है
-        if not is_authorized(update): return Q_COUNT
+        if not is_authorized(update): 
+            return Q_COUNT
         user_text = update.message.text.strip()
         msg_obj = update.message
         
     allowed_counts = ['10', '20', '50', '70']
     
-    # 🚫 इनपुट वैलिडेशन (अगर गलत इनपुट है तो बटन वापस दिखाओ)
+    # 🚫 इनपुट वैलिडेशन
     if user_text not in allowed_counts:
         inline_q_keyboard = InlineKeyboardMarkup([
             [
@@ -699,11 +700,23 @@ async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             ]
         ])
         
-        error_msg = "⚠️ <b>अवैध इनपुट!</b> कृपया नीचे दिए गए बटनों में से ही किसी एक संख्या को चुनें।"
+        error_msg = "⚠️ <b>अवैध इनपुट!</b> कृपया नीचे दिए गए बटनों में से ही किसी एक संख्या को चुनें:"
+        
         if query:
-            await query.edit_message_text(text=error_msg, reply_markup=inline_q_keyboard, parse_mode="HTML")
+            try:
+                await query.edit_message_text(
+                    text=error_msg, 
+                    reply_markup=inline_q_keyboard, 
+                    parse_mode="HTML"
+                )
+            except Exception as e:
+                logging.warning(f"edit_message_text failed: {e}")
         else:
-            await update.message.reply_text(text=error_msg, reply_markup=inline_q_keyboard, parse_mode="HTML")
+            await update.message.reply_text(
+                text=error_msg, 
+                reply_markup=inline_q_keyboard, 
+                parse_mode="HTML"
+            )
         return Q_COUNT 
         
     # 🟢 डेटा सेव करें
@@ -715,14 +728,17 @@ async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     )
     
     if query:
-        # 🔥 फिक्स: reply_markup=None सेट करने से बटन तुरंत डिलीट/क्लोज हो जाएगा
-        await query.edit_message_text(
-            text=success_text, 
-            parse_mode="HTML",
-            reply_markup=None
-        )
+        try:
+            await query.edit_message_text(
+                text=success_text, 
+                parse_mode="HTML",
+                reply_markup=None  # ✅ बटन हटा दो
+            )
+        except Exception as e:
+            logging.warning(f"edit_message_text failed: {e}")
+            # Fallback: नया message भेज दो
+            await msg_obj.reply_text(text=success_text, parse_mode="HTML")
     else:
-        # अगर यूज़र ने टाइप किया था, तो नॉर्मल मैसेज भेजें
         await update.message.reply_text(text=success_text, parse_mode="HTML")
         
     return TITLE
