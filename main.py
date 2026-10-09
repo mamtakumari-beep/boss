@@ -681,8 +681,7 @@ async def handle_final_topic_selection(update: Update, context: ContextTypes.DEF
     await query.edit_message_text(
         text=(
             f"<blockquote>✅ Topic Saved: <b>{context.user_data['topic']}</b></blockquote>\n\n"
-            "<blockquote>🔢 <b>Step 2:</b> How many questions do you want?</blockquote>\n"
-            "<b>Niche diye gaye inline buttons se chunein:</b>"
+            "✨ <b>Step 2: How many questions do you want?</b>"
         ),
         parse_mode="HTML",
         reply_markup=count_inline_keyboard
@@ -707,7 +706,7 @@ async def handle_topic(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     await update.message.reply_text(
         text=(
             f"<blockquote>✅ Topic Saved: <b>{context.user_data['topic']}</b></blockquote>\n\n"
-            "<blockquote>🔢 <b>Step 2:</b> How many questions do you want?</blockquote>"
+            "✨ <b>Step 2: How many questions do you want?</b>"
         ),
         parse_mode="HTML",
         reply_markup=count_inline_keyboard
@@ -761,7 +760,7 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             context.user_data["quiz_build"]["title"] = topic_name  
             
             desc_inline_keyboard = InlineKeyboardMarkup([
-                [InlineKeyboardButton("Skip Description ⏭️", callback_data="desc_skip")]
+                [{"text": "Skip Description ⏭️", "callback_data": "desc_skip", "style": "primary"}]
             ])
             
             # मैसेज सेंड करके उसकी ID मेमोरी में सेव कर रहे हैं
@@ -852,8 +851,8 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
     # 🟢 COLORED: Step 5 (Language) के लिए इनलाइन कीबोर्ड बटन्स को Green (success) कलर दिया गया है
     lang_inline_keyboard = InlineKeyboardMarkup([
         [
-            {"text": "English 🇬🇧", "callback_data": "lang_English", "style": "success"},
-            {"text": "Hindi 🇮🇳", "callback_data": "lang_Hindi", "style": "success"}
+            {"text": "Hindi", "callback_data": "lang_Hindi", "style": "success"},
+            {"text": "English", "callback_data": "lang_English", "style": "success"}
         ]
     ])
     
