@@ -668,13 +668,13 @@ async def handle_final_topic_selection(update: Update, context: ContextTypes.DEF
         
     context.user_data['topic'] = topic_chosen
     
-    # 🟢 FIXED: ReplyKeyboardMarkup replaced with InlineKeyboardMarkup
+    # 🟢 FIXED & COLORED: Raw payload format used to force Green (success) button colors
     count_inline_keyboard = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("10", callback_data="qcnt_10"),
-            InlineKeyboardButton("20", callback_data="qcnt_20"),
-            InlineKeyboardButton("50", callback_data="qcnt_50"),
-            InlineKeyboardButton("70", callback_data="qcnt_70")
+            {"text": "10", "callback_data": "qcnt_10", "style": "success"},
+            {"text": "20", "callback_data": "qcnt_20", "style": "success"},
+            {"text": "50", "callback_data": "qcnt_50", "style": "success"},
+            {"text": "70", "callback_data": "qcnt_70", "style": "success"}
         ]
     ])
     
@@ -694,19 +694,21 @@ async def handle_topic(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     
     context.user_data['topic'] = update.message.text
     
-    # 🟢 FIXED: ReplyKeyboardMarkup replaced with InlineKeyboardMarkup
+    # 🟢 FIXED & COLORED: Raw payload format used to force Green (success) button colors
     count_inline_keyboard = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("10", callback_data="qcnt_10"),
-            InlineKeyboardButton("20", callback_data="qcnt_20"),
-            InlineKeyboardButton("50", callback_data="qcnt_50"),
-            InlineKeyboardButton("70", callback_data="qcnt_70")
+            {"text": "10", "callback_data": "qcnt_10", "style": "success"},
+            {"text": "20", "callback_data": "qcnt_20", "style": "success"},
+            {"text": "50", "callback_data": "qcnt_50", "style": "success"},
+            {"text": "70", "callback_data": "qcnt_70", "style": "success"}
         ]
     ])
     
     await update.message.reply_text(
-        f"<blockquote>✅ Topic Saved: <b>{context.user_data['topic']}</b></blockquote>\n\n"
-        "<blockquote>🔢 <b>Step 2:</b> How many questions do you want?</blockquote>",
+        text=(
+            f"<blockquote>✅ Topic Saved: <b>{context.user_data['topic']}</b></blockquote>\n\n"
+            "<blockquote>🔢 <b>Step 2:</b> How many questions do you want?</blockquote>"
+        ),
         parse_mode="HTML",
         reply_markup=count_inline_keyboard
     )
