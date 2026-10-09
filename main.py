@@ -686,34 +686,98 @@ async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             parse_mode="HTML",
             reply_markup=markup
         )
-        return Q_COUNT # यूज़र को इसी स्टेप पर रोक कर रखेगा
+    return Q_COUNT
         
     context.user_data['q_count'] = int(user_text)
-    await update.message.reply_text(
+    saved_topic = context.user_data.get('topic', 'AI Quiz')
+    
+    # 🔥 2. Title Step Confirmation Inline Buttons (Yes / No)
+    title_confirm_keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("Yes ✅", callback_data="title_use_topic"),
+            InlineKeyboardButton("No ❌", callback_data="title_custom_name")
+        ]
+    ])
+    
+    msg_obj = query.message if query else update.message
+    await msg_obj.reply_text(
         f"<blockquote>✅ Questions Count: <b>{context.user_data['q_count']}</b></blockquote>\n\n"
-        "<blockquote>📝 <b>Step 3:</b> Send me the Title of your quiz.</blockquote>",
+        f"🌟 <b>क्या आप क्विज़ का टाइटल भी वही रखना चाहते हैं जो टॉपिक का नाम है?</b>\n"
+        f"📝 <i>टॉपिक नाम: {saved_topic}</i>",
         parse_mode="HTML",
-        reply_markup=ReplyKeyboardRemove(selective=True)
+        reply_markup=title_confirm_keyboard
     )
     return TITLE
 
 async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handles both custom text title input and Inline callback buttons for title step"""
     if not is_authorized(update): return TITLE
     
-    context.user_data['title'] = update.message.text
+    # 🟢 SAFETY FIX: Ensure 'quiz_build' exists in user_data to prevent KeyError
+    if "quiz_build" not in context.user_data:
+        context.user_data["quiz_build"] = {"title": "", "description": "", "questions": []}
     
-    # ✅ Selective Keyboard 3: Skip Description Button
-    reply_keyboard = [['Skip ⏭️']]
-    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
-    
-    await update.message.reply_text(
-        "✅ Title Saved!\n\n"
-        "<blockquote>📝 <b>Step 4:</b> Send a Description for this quiz.</blockquote>\n"
-        "<blockquote>or niche diye gaye <b>skip ⏭️</b> button par click kare.</blockquote>",
-        parse_mode="HTML",
-        reply_markup=markup
-    )
-    return DESCRIPTION
+    # Case 1: Agar user ne Inline Button (Yes/No) par click kiya hai
+    if update.callback_query:
+        query = update.callback_query
+        await query.answer()
+        
+        if query.data == "title_use_topic":
+            # 'Yes' click karne par saved topic ko hi title bana do
+            topic_name = context.user_data.get('topic', 'AI Quiz')
+            context.user_data['title'] = topic_name
+            context.user_data["quiz_build"]["title"] = topic_name  # Save to dict as well
+            
+            # Buttons remove karein screen se
+            try: await query.edit_message_reply_markup(reply_markup=None)
+            except Exception: pass
+            
+            # Step 4 (Description) par bhejein (Selective=True text keyboard layout)
+            reply_keyboard = [['Skip ⏭️']]
+            markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
+            
+            await query.message.reply_text(
+                f"✅ Title Saved (Same as Topic): <b>{context.user_data['title']}</b>\n\n"
+                "<blockquote>📝 <b>Step 4:</b> Send a Description for this quiz.</blockquote>\n"
+                "<blockquote>or niche diye gaye <b>skip ⏭️</b> button par click kare.</blockquote>",
+                parse_mode="HTML",
+                reply_markup=markup
+            )
+            return DESCRIPTION
+            
+        elif query.data == "title_custom_name":
+            # 'No' click karne par message badal kar naya title chat me mangen
+            await query.edit_message_text(
+                "📝 <b>कृपया अपनी क्विज़ के लिए एक नया Title चैट में टाइप करके भेजें:</b>",
+                parse_mode="HTML",
+                reply_markup=None
+            )
+            return TITLE
+            
+    # Case 2: Agar user ne 'No' dabane ke baad chat me custom text title bheja hai
+    if update.message and update.message.text:
+        title_text = update.message.text.strip()
+        
+        if len(title_text) > 128:
+            await update.message.reply_text("⚠️ This title is too long. Please send a new one, 128 characters max.")
+            return TITLE
+            
+        context.user_data['title'] = title_text
+        context.user_data["quiz_build"]["title"] = title_text  # Save to dict as well
+        
+        reply_keyboard = [['Skip ⏭️']]
+        markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
+        
+        await update.message.reply_text(
+            f"✅ Title Saved: <b>{context.user_data['title']}</b>\n\n"
+            "<blockquote>📝 <b>Step 4:</b> Send a Description for this quiz.</blockquote>\n"
+            "<blockquote>or niche diye gaye <b>skip ⏭️</b> button par click kare.</blockquote>",
+            parse_mode="HTML",
+            reply_markup=markup
+        )
+        return DESCRIPTION
+
+    return TITLE
 
 async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if not is_authorized(update): return DESCRIPTION
