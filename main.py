@@ -805,16 +805,32 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if not is_authorized(update): return DESCRIPTION
     
-    text = update.message.text
-    context.user_data['description'] = "None" if text in ["/skip", "Skip ⏭️"] else text
+    query = update.callback_query
+    user_text = ""
     
-    # ✅ Selective Keyboard 4: Language Choice
-    reply_keyboard = [['English', 'Hindi']]
-    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
+    if query:
+        await query.answer()
+        if query.data == "desc_skip":
+            user_text = "None"
+        try: await query.edit_message_reply_markup(reply_markup=None)
+        except Exception: pass
+    elif update.message and update.message.text:
+        user_text = update.message.text.strip()
+        
+    context.user_data['description'] = user_text if user_text else "None"
     
-    await update.message.reply_text(
+    # 🔥 LANGUAGE स्टेप के लिए भी इनलाइन बटन का प्रयोग करें
+    lang_keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("English 🇬🇧", callback_data="lang_English"),
+            InlineKeyboardButton("Hindi 🇮🇳", callback_data="lang_Hindi")
+        ]
+    ])
+    
+    msg_target = query.message if query else update.message
+    await msg_target.reply_text(
         "<blockquote>🌐 <b>Step 5 — Language</b>\nChoose quiz output layout language:</blockquote>",
-        reply_markup=markup,
+        reply_markup=lang_keyboard,
         parse_mode="HTML"
     )
     return LANGUAGE
