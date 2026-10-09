@@ -734,7 +734,7 @@ async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     return TITLE
 
 async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handles both custom text title input and Inline callback buttons for title step"""
+    """Handles both custom text title input and Inline callback buttons for title step (Buttons Removed)"""
     if not is_authorized(update): return TITLE
     
     # 🟢 SAFETY FIX: Ensure 'quiz_build' exists in user_data to prevent KeyError
@@ -755,20 +755,15 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             try: await query.message.delete()
             except Exception: pass
             
-            # 2. 🔄 ReplyKeyboardMarkup ki jagah InlineKeyboardMarkup use karein
-            inline_keyboard = [[InlineKeyboardButton("Skip ⏭️", callback_data="skip_description")]]
-            markup = InlineKeyboardMarkup(inline_keyboard)
-            
-            # 3. query.message.reply_text के बजाय context.bot.send_message से फ्रेश मैसेज भेजें
+            # 2. context.bot.send_message से फ्रेश मैसेज भेजें (बटन हटा दिए गए हैं)
             await context.bot.send_message(
                 chat_id=query.message.chat_id,
                 text=(
                     f"✅ Title Saved (Same as Topic): <b>{context.user_data['title']}</b>\n\n"
                     "<blockquote>📝 <b>Step 4:</b> Send a Description for this quiz.</blockquote>\n"
-                    "<blockquote>or niche diye gaye <b>skip ⏭️</b> button par click kare.</blockquote>"
+                    "<blockquote>or type /skip to skip this step.</blockquote>"
                 ),
-                parse_mode="HTML",
-                reply_markup=markup
+                parse_mode="HTML"
             )
             return DESCRIPTION
             
@@ -792,16 +787,12 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         context.user_data['title'] = title_text
         context.user_data["quiz_build"]["title"] = title_text  # Save to dict as well
         
-        # 🔄 ReplyKeyboardMarkup ki jagah InlineKeyboardMarkup use karein
-        inline_keyboard = [[InlineKeyboardButton("Skip ⏭️", callback_data="skip_description")]]
-        markup = InlineKeyboardMarkup(inline_keyboard)
-        
+        # बिना किसी बटन के सीधे मैसेज रिप्लाई करें
         await update.message.reply_text(
             f"✅ Title Saved: <b>{context.user_data['title']}</b>\n\n"
             "<blockquote>📝 <b>Step 4:</b> Send a Description for this quiz.</blockquote>\n"
-            "<blockquote>or niche diye gaye <b>skip ⏭️</b> button par click kare.</blockquote>",
-            parse_mode="HTML",
-            reply_markup=markup
+            "<blockquote>or type /skip to skip this step.</blockquote>",
+            parse_mode="HTML"
         )
         return DESCRIPTION
 
