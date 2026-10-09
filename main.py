@@ -619,7 +619,7 @@ async def handle_subject_navigation(update: Update, context: ContextTypes.DEFAUL
     
     updated_text = (
         f"<blockquote>📂 Subject: <b>{sub_title}</b></blockquote>\n\n"
-        "<blockquote>🎑 <b>topics me se koi ek select karein:</b></blockquote>"
+        "🎑 <b>topics me se koi ek select karein:</b>"
     )
     
     await query.edit_message_text(text=updated_text, reply_markup=InlineKeyboardMarkup(topics_keyboard), parse_mode="HTML")
@@ -852,7 +852,7 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
     lang_inline_keyboard = InlineKeyboardMarkup([
         [
             {"text": "Hindi", "callback_data": "lang_Hindi", "style": "success"},
-            {"text": "English", "callback_data": "lang_English", "style": "success"}
+            {"text": "English", "callback_data": "lang_English", "style": "primary"}
         ]
     ])
     
@@ -914,7 +914,7 @@ async def handle_explanation(update: Update, context: ContextTypes.DEFAULT_TYPE)
     diff_inline_keyboard = InlineKeyboardMarkup([
         [
             {"text": "Easy", "callback_data": "diff_Easy", "style": "primary"},
-            {"text": "Medium", "callback_data": "diff_Medium", "style": "primary"},
+            {"text": "Medium", "callback_data": "diff_Medium", "style": "success"},
             {"text": "Hard", "callback_data": "diff_Hard", "style": "primary"}
         ]
     ])
@@ -943,7 +943,7 @@ async def handle_difficulty(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     opts_inline_keyboard = InlineKeyboardMarkup([
         [
             {"text": "2 Options", "callback_data": "opts_2", "style": "success"},
-            {"text": "3 Options", "callback_data": "opts_3", "style": "success"},
+            {"text": "3 Options", "callback_data": "opts_3", "style": "primary"},
             {"text": "4 Options", "callback_data": "opts_4", "style": "success"}
         ]
     ])
@@ -971,9 +971,9 @@ async def handle_options_count(update: Update, context: ContextTypes.DEFAULT_TYP
     # 🔵 COLORED: Step 9 (Time Limit) के लिए इनलाइन कीबोर्ड बटन्स को Blue (primary) कलर दिया गया है
     time_inline_keyboard = InlineKeyboardMarkup([
         [
-            {"text": "10 sec ⏱", "callback_data": "time_10", "style": "primary"},
-            {"text": "15 sec ⏱", "callback_data": "time_15", "style": "primary"},
-            {"text": "30 sec ⏱", "callback_data": "time_30", "style": "primary"}
+            {"text": "10 sec", "callback_data": "time_10", "style": "primary"},
+            {"text": "15 sec", "callback_data": "time_15", "style": "success"},
+            {"text": "30 sec", "callback_data": "time_30", "style": "primary"}
         ]
     ])
     
