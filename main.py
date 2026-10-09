@@ -967,11 +967,12 @@ async def handle_options_count(update: Update, context: ContextTypes.DEFAULT_TYP
     user_text = query.data.replace("opts_", "").strip()
     context.user_data['options_count'] = int(user_text)
     
+    # 🔵 COLORED: Step 9 (Time Limit) के लिए इनलाइन कीबोर्ड बटन्स को Blue (primary) कलर दिया गया है
     time_inline_keyboard = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("10 sec ⏱", callback_data="time_10"),
-            InlineKeyboardButton("15 sec ⏱", callback_data="time_15"),
-            InlineKeyboardButton("30 sec ⏱", callback_data="time_30")
+            {"text": "10 sec ⏱", "callback_data": "time_10", "style": "primary"},
+            {"text": "15 sec ⏱", "callback_data": "time_15", "style": "primary"},
+            {"text": "30 sec ⏱", "callback_data": "time_30", "style": "primary"}
         ]
     ])
     
