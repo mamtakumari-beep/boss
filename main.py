@@ -5415,13 +5415,17 @@ async def main():
         conv_handler = ConversationHandler(
             entry_points=[CommandHandler("autoquiz", autoquiz_start)],
             states={
+                # 📝 मोड 1: टेक्स्ट इनपुट मोड (यहाँ बटन का शुरुआती गेटवे और टेक्स्ट रिसीवर दोनों हैं)
                 TOPIC: [
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_topic), # टेक्स्ट मैसेज आने पर सीधा handle_topic पर भेजेगा
-                    CallbackQueryHandler(handle_topic_mode_routing, pattern="^mode_"), # Text/Subject मोड सिलेक्ट करने के लिए
-                    CallbackQueryHandler(handle_subject_navigation, pattern="^sub_"), # मेन सब्जेक्ट कीबोर्ड खोलने के लिए
-                    CallbackQueryHandler(handle_final_topic_selection, pattern="^set_topic_"), # आखिरी टॉपिक चुनने के लिए
-                    CallbackQueryHandler(handle_topic_mode_routing, pattern="^back_to_subjects_nav$") # बैक बटन के लिए नए फ़ंक्शन को कॉल
-                 ],
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_topic), 
+                    CallbackQueryHandler(handle_topic_mode_routing, pattern="^mode_"), 
+                 ], 
+                # 📂 मोड 2: प्योर बटन मोड (यहाँ कोई MessageHandler नहीं है, इसलिए टेक्स्ट काम नहीं करेगा!)
+                BUTTON_TOPIC: [
+                    CallbackQueryHandler(handle_subject_navigation, pattern="^sub_"), 
+                    CallbackQueryHandler(handle_final_topic_selection, pattern="^set_topic_"), 
+                    CallbackQueryHandler(handle_topic_mode_routing, pattern="^back_to_subjects_nav$") 
+                ],
                 Q_COUNT: [
                     CallbackQueryHandler(handle_q_count, pattern="^qcnt_"),
                  ],
