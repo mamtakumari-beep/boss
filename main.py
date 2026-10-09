@@ -911,11 +911,12 @@ async def handle_explanation(update: Update, context: ContextTypes.DEFAULT_TYPE)
     user_text = query.data.replace("expl_", "").strip()
     context.user_data['explanation'] = user_text
     
+    # इसे अपने मुख्य कोड में handle_explanation फ़ंक्शन के अंदर बदलें:
     diff_inline_keyboard = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("Easy 🟢", callback_data="diff_Easy"),
-            InlineKeyboardButton("Medium 🟡", callback_data="diff_Medium"),
-            InlineKeyboardButton("Hard 🔴", callback_data="diff_Hard")
+            {"text": "Easy 🟢", "callback_data": "diff_Easy", "style": "primary"},
+            {"text": "Medium 🟡", "callback_data": "diff_Medium", "style": "primary"},
+            {"text": "Hard 🔴", "callback_data": "diff_Hard", "style": "primary"}
         ]
     ])
     
@@ -939,11 +940,12 @@ async def handle_difficulty(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     user_text = query.data.replace("diff_", "").strip()
     context.user_data['difficulty'] = user_text
     
+    # 🟢 COLORED: Step 8 (Option Count) के लिए इनलाइन कीबोर्ड बटन्स को Green (success) कलर दिया गया है
     opts_inline_keyboard = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("2 Options", callback_data="opts_2"),
-            InlineKeyboardButton("3 Options", callback_data="opts_3"),
-            InlineKeyboardButton("4 Options", callback_data="opts_4")
+            {"text": "2 Options", "callback_data": "opts_2", "style": "success"},
+            {"text": "3 Options", "callback_data": "opts_3", "style": "success"},
+            {"text": "4 Options", "callback_data": "opts_4", "style": "success"}
         ]
     ])
     
