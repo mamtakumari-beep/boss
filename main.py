@@ -398,7 +398,7 @@ CRITICAL RULES:
         
 # --- BOT ROUTINES & HANDLERS ---
 async def autoquiz_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    # 🔥 FIXED: query वेरिएबल को यहाँ पूरी तरह से सही ढंग से डिफाइन कर दिया गया है
+    # query वेरिएबल को सही ढंग से डिफाइन किया गया है
     query = update.callback_query
     msg_obj = query.message if query else update.message
     user_id = query.from_user.id if query else update.message.from_user.id
@@ -423,29 +423,64 @@ async def autoquiz_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     context.user_data.clear()
     
-    # 🏛️ LEVEL 1: MAIN SUBJECT BUTTONS
-    main_subject_keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("📰 Current Affairs & GK 📰", callback_data="sub_current_gk")],
-        [InlineKeyboardButton("📜 History (इतिहास)", callback_data="sub_history"),
-         InlineKeyboardButton("✨ Polity (राजव्यवस्था)", callback_data="sub_polity")],
-        [InlineKeyboardButton("🌍 Geography (भूगोल)", callback_data="sub_geography"),
-         InlineKeyboardButton("🧬 General Science (विज्ञान)", callback_data="sub_science")],
-        [InlineKeyboardButton("🤖 Languages & Grammar", callback_data="sub_languages")]
+    # 🌟 MODIFIED: अब सीधे सब्जेक्ट लिस्ट नहीं, बल्कि मोड सिलेक्ट करने के बटन्स दिखेंगे
+    mode_keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("✍️ Text Mode (Type Topic)", callback_data="mode_text_input"),
+            InlineKeyboardButton("📂 Subject Mode (Buttons)", callback_data="mode_button_select")
+        ]
     ])
     
     welcome_text = (
         "<blockquote>🤖 <b>Welcome to AI Auto-Quiz Generator!</b></blockquote>\n\n"
-        "<blockquote>📚 <b>Step 1 — Select Subject:</b></blockquote>\n"
-        "<blockquote>Niche diye gaye buttons me se apna main <b>Subject</b> chunein, "
-        "jiske baad uske specific topics open honge.</blockquote>\n\n"
-        "<i>✍️ (Note: Agar aapko list se alag koi naya topic chahiye, toh aap abhi bhi seedhe chat me type karke bhej sakte hain!)</i>\n"
-        "❤️‍🔥 <b>Onwer: Niraj</b>"
+        "<blockquote>🎯 <b>Choose Topic Input Mode:</b></blockquote>\n"
+        "Aap quiz ka topic kis tarah se set karna chahte hain?\n\n"
+        "📝 <b>Text Mode:</b> Aap chat me khud apna topic manually type karke bhejenge.\n"
+        "🗂️ <b>Subject Mode:</b> Bot की pre-defined subject list (History, GK आदि) में से चुनेंगे।"
     )
     
     if query:
-        await query.edit_message_text(text=welcome_text, reply_markup=main_subject_keyboard, parse_mode="HTML")
+        await query.edit_message_text(text=welcome_text, reply_markup=mode_keyboard, parse_mode="HTML")
     else:
-        await msg_obj.reply_text(text=welcome_text, reply_markup=main_subject_keyboard, parse_mode="HTML")
+        await msg_obj.reply_text(text=welcome_text, reply_markup=mode_keyboard, parse_mode="HTML")
+        
+    return TOPIC
+
+async def handle_topic_mode_routing(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handles routing based on user choosing Text Mode or Subject/Button Mode"""
+    query = update.callback_query
+    if not query:
+        return TOPIC
+
+    await query.answer()
+    choice = query.data
+
+    # CASE A: यूज़र ने Text Mode चुना
+    if choice == "mode_text_input":
+        await query.edit_message_text(
+            text="✍️ <b>Please type your Quiz Topic in the chat & send it:</b>\n\n<i>Example: Ancient Indian History, General Science Quiz, Current Affairs 2026 etc.</i>",
+            reply_markup=None,
+            parse_mode="HTML"
+        )
+        return TOPIC
+
+    # CASE B: यूज़र ने Subject/Button Mode चुना या बैक बटन दबाया
+    elif choice == "mode_button_select" or choice == "back_to_subjects_nav":
+        main_subject_keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("📰 Current Affairs & GK 📰", callback_data="sub_current_gk")],
+            [InlineKeyboardButton("📜 History (इतिहास)", callback_data="sub_history"),
+             InlineKeyboardButton("✨ Polity (राजव्यवस्था)", callback_data="sub_polity")],
+            [InlineKeyboardButton("🌍 Geography (भूगोल)", callback_data="sub_geography"),
+             InlineKeyboardButton("🧬 General Science (विज्ञान)", callback_data="sub_science")],
+            [InlineKeyboardButton("🤖 Languages & Grammar", callback_data="sub_languages")]
+        ])
+        
+        await query.edit_message_text(
+            text="<blockquote>🤖 <b>Welcome to AI Auto-Quiz Generator!</b></blockquote>\n\n<blockquote>📚 <b>Step 1 — Select Subject:</b></blockquote>\nNiche diye gaye buttons me se apna main <b>Subject</b> chunein, jiske baad uske specific topics open honge.",
+            reply_markup=main_subject_keyboard,
+            parse_mode="HTML"
+        )
+        return TOPIC
         
     return TOPIC
 
