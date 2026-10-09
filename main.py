@@ -746,23 +746,26 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         await query.answer()
         
         if query.data == "title_use_topic":
-            # 'Yes' click karne par saved topic ko hi title bana do
             topic_name = context.user_data.get('topic', 'AI Quiz')
             context.user_data['title'] = topic_name
-            context.user_data["quiz_build"]["title"] = topic_name  # Save to dict as well
+            context.user_data["quiz_build"]["title"] = topic_name  
             
-            # Buttons remove karein screen se
-            try: await query.edit_message_reply_markup(reply_markup=None)
+            # 1. पहले पुराने इनलाइन बटन को पूरी तरह डिलीट या रिमूव करें
+            try: await query.message.delete()
             except Exception: pass
             
-            # Step 4 (Description) par bhejein (Selective=True text keyboard layout)
+            # 2. selective=False करें ताकि बटन हर हाल में स्क्रीन पर आ जाए
             reply_keyboard = [['Skip ⏭️']]
-            markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
+            markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=False)
             
-            await query.message.reply_text(
-                f"✅ Title Saved (Same as Topic): <b>{context.user_data['title']}</b>\n\n"
-                "<blockquote>📝 <b>Step 4:</b> Send a Description for this quiz.</blockquote>\n"
-                "<blockquote>or niche diye gaye <b>skip ⏭️</b> button par click kare.</blockquote>",
+            # 3. query.message.reply_text के बजाय context.bot.send_message से फ्रेश मैसेज भेजें
+            await context.bot.send_message(
+                chat_id=query.message.chat_id,
+                text=(
+                    f"✅ Title Saved (Same as Topic): <b>{context.user_data['title']}</b>\n\n"
+                    "<blockquote>📝 <b>Step 4:</b> Send a Description for this quiz.</blockquote>\n"
+                    "<blockquote>or niche diye gaye <b>skip ⏭️</b> button par click kare.</blockquote>"
+                ),
                 parse_mode="HTML",
                 reply_markup=markup
             )
