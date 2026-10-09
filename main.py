@@ -810,7 +810,7 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
     
     # ✅ Selective Keyboard 4: Language Choice
     reply_keyboard = [['English', 'Hindi']]
-    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
+    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=False)
     
     await update.message.reply_text(
         "<blockquote>🌐 <b>Step 5 — Language</b>\nChoose quiz output layout language:</blockquote>",
