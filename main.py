@@ -602,42 +602,27 @@ async def handle_final_topic_selection(update: Update, context: ContextTypes.DEF
     
     topic_chosen = query.data.replace("set_topic_", "").strip()
     
-    # 🟢 फिक्स मैपिंग डेटाबेस: शॉर्ट कोड्स को बड़े नाम असाइन करने के लिए
+    # 🟢 शॉर्ट कोड्स को बड़े नाम असाइन करने की आपकी मैपिंग
     topic_map = {
         # Polity Mapping
-        "pol_1": "Making and Sources of Indian Constitution",
-        "pol_2": "Preamble and Schedules of Indian Constitution",
-        "pol_3": "Union and its Territory and Citizenship",
-        "pol_4": "Fundamental Rights of India",
-        "pol_5": "Directive Principles of State Policy and Fundamental Duties",
-        "pol_6": "President Vice President and Prime Minister of India",
-        "pol_7": "Indian Parliament Lok Sabha and Rajya Sabha",
-        "pol_8": "Supreme Court of India and Judicial Review",
-        "pol_9": "Governor Chief Minister and State Legislature",
-        "pol_10": "High Court and Subordinate Courts in India",
-        "pol_11": "Panchayati Raj and Local Self Government",
-        "pol_12": "Election Commission of India and Electoral Reforms",
-        "pol_13": "Constitutional and Non Constitutional Bodies CAG NITI Aayog",
-        "pol_14": "Important Constitutional Amendments of India",
+        "pol_1": "Making and Sources of Indian Constitution", "pol_2": "Preamble and Schedules of Indian Constitution",
+        "pol_3": "Union and its Territory and Citizenship", "pol_4": "Fundamental Rights of India",
+        "pol_5": "Directive Principles of State Policy and Fundamental Duties", "pol_6": "President Vice President and Prime Minister of India",
+        "pol_7": "Indian Parliament Lok Sabha and Rajya Sabha", "pol_8": "Supreme Court of India and Judicial Review",
+        "pol_9": "Governor Chief Minister and State Legislature", "pol_10": "High Court and Subordinate Courts in India",
+        "pol_11": "Panchayati Raj and Local Self Government", "pol_12": "Election Commission of India and Electoral Reforms",
+        "pol_13": "Constitutional and Non Constitutional Bodies CAG NITI Aayog", "pol_14": "Important Constitutional Amendments of India",
         "pol_15": "Emergency Provisions in Indian Constitution",
-        
         # Languages Mapping
-        "lang_1": "Hindi Grammar Varnamala and Sandhi",
-        "lang_2": "Hindi Grammar Sangya Sarvnam Kriya Avyay",
-        "lang_3": "Hindi Grammar Samas Upsarg Pratyay",
-        "lang_4": "Hindi Vocabulary Vilom Paryayvachi",
-        "lang_5": "Hindi Grammar Ling Vachan Karak Kaal",
-        "lang_6": "Hindi Muhavare Lokoktiyan Ras Chhand Alankar",
-        "lang_7": "English Grammar Parts of Speech",
-        "lang_8": "English Grammar Tenses and Sentence Structure",
-        "lang_9": "English Grammar Active and Passive Voice",
-        "lang_10": "English Grammar Direct and Indirect Narration",
-        "lang_11": "English Grammar Subject Verb Agreement Errors",
-        "lang_12": "English Vocabulary Synonyms Antonyms One Word Substitution",
+        "lang_1": "Hindi Grammar Varnamala and Sandhi", "lang_2": "Hindi Grammar Sangya Sarvnam Kriya Avyay",
+        "lang_3": "Hindi Grammar Samas Upsarg Pratyay", "lang_4": "Hindi Vocabulary Vilom Paryayvachi",
+        "lang_5": "Hindi Grammar Ling Vachan Karak Kaal", "lang_6": "Hindi Muhavare Lokoktiyan Ras Chhand Alankar",
+        "lang_7": "English Grammar Parts of Speech", "lang_8": "English Grammar Tenses and Sentence Structure",
+        "lang_9": "English Grammar Active and Passive Voice", "lang_10": "English Grammar Direct and Indirect Narration",
+        "lang_11": "English Grammar Subject Verb Agreement Errors", "lang_12": "English Vocabulary Synonyms Antonyms One Word Substitution",
         "lang_13": "English Grammar Prepositions and Articles"
     }
     
-    # अगर चुना गया कोड हमारी मैपिंग डिक्शनरी में है, तो असली नाम निकालें
     if topic_chosen in topic_map:
         topic_chosen = topic_map[topic_chosen]
         
@@ -648,14 +633,16 @@ async def handle_final_topic_selection(update: Update, context: ContextTypes.DEF
     except Exception:
         pass
         
+    # 🔥 FIX: यहाँ बिल्कुल ऑप्शन स्टेप्स की तरह शुद्ध ReplyKeyboardMarkup बनाया और यूज़र के मैसेज पर रिप्लाई किया
     reply_keyboard = [['10', '20', '50', '70']]
     markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
     
     await query.message.reply_text(
         f"<blockquote>✅ Topic Saved: <b>{context.user_data['topic']}</b></blockquote>\n\n"
-        "<blockquote>🔢 <b>Step 2:</b> How many questions do you want?</blockquote>",
+        "<blockquote>🔢 <b>Step 2:</b> How many questions do you want? Choose from the keyboard below:</blockquote>",
         parse_mode="HTML",
-        reply_markup=markup
+        reply_markup=markup,
+        reply_to_message_id=query.message.message_id # 👈 रिप्लाई आईडी देने से ग्रुप में कीबोर्ड तुरंत खुलेगा
     )
     return Q_COUNT
     
@@ -679,42 +666,28 @@ async def handle_topic(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if not is_authorized(update): return Q_COUNT
     
-    user_text = ""
-    query = update.callback_query
-    
-    # 1. Check if input came from the Question Count Inline Button
-    if query:
-        await query.answer()
-        user_text = query.data.replace("qcnt_", "").strip()
-        try: await query.edit_message_reply_markup(reply_markup=None)
-        except Exception: pass
-    elif update.message and update.message.text:
-        user_text = update.message.text.strip()
+    # 🔥 FIX: इनलाइन के पुराने कचरे कोड को हटाकर इसे बाकी बटनों की तरह शुद्ध टेक्स्ट आधारित बनाया
+    if not update.message or not update.message.text:
+        return Q_COUNT
         
+    user_text = update.message.text.strip()
     allowed_counts = ['10', '20', '50', '70']
     
     if user_text not in allowed_counts:
-        # Fallback if invalid input
-        count_inline_keyboard = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("10", callback_data="qcnt_10"),
-                InlineKeyboardButton("20", callback_data="qcnt_20"),
-                InlineKeyboardButton("50", callback_data="qcnt_50"),
-                InlineKeyboardButton("70", callback_data="qcnt_70")
-            ]
-        ])
-        msg_target = query.message if query else update.message
-        await msg_target.reply_text(
-            "⚠️ <b>अवैध इनपुट!</b> कृपया नीचे दिए गए इनलाइन बटनों में से ही किसी एक संख्या को चुनें:",
+        reply_keyboard = [['10', '20', '50', '70']]
+        markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True, selective=True)
+        await update.message.reply_text(
+            "⚠️ <b>अवैध इनपुट!</b> कृपया नीचे दिए गए बटनों में से ही किसी एक संख्या को चुनें:",
             parse_mode="HTML",
-            reply_markup=count_inline_keyboard
+            reply_markup=markup,
+            reply_to_message_id=update.message.message_id
         )
         return Q_COUNT
         
     context.user_data['q_count'] = int(user_text)
     saved_topic = context.user_data.get('topic', 'AI Quiz')
     
-    # 🔥 2. Title Step Confirmation Inline Buttons (Yes / No)
+    # टाइटल पुष्टीकरण के लिए इनलाइन बटन (चूंकि टाइटल चैट में टाइप करना है या Yes/No करना है)
     title_confirm_keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("Yes ✅", callback_data="title_use_topic"),
@@ -722,13 +695,13 @@ async def handle_q_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         ]
     ])
     
-    msg_obj = query.message if query else update.message
-    await msg_obj.reply_text(
+    await update.message.reply_text(
         f"<blockquote>✅ Questions Count: <b>{context.user_data['q_count']}</b></blockquote>\n\n"
         f"🌟 <b>क्या आप क्विज़ का टाइटल भी वही रखना चाहते हैं जो टॉपिक का नाम है?</b>\n"
         f"📝 <i>टॉपिक नाम: {saved_topic}</i>",
         parse_mode="HTML",
-        reply_markup=title_confirm_keyboard
+        reply_markup=title_confirm_keyboard,
+        reply_to_message_id=update.message.message_id
     )
     return TITLE
 
